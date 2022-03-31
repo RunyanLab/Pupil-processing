@@ -11,7 +11,7 @@ mouse = input('Whats the mouse ID? Please input as string');
 date = input('Date?');
 sampling_rate_in_hz=input('What is the frame rate fo the camera?');
 threshold = input('Threshold?'); 
-orientation = input('What is the orientation of the camera? 0(normal)/180(rotated)');
+orientation = input('What is the orientation of the camera? 0(normal)/90(rotated)');
 unit = input('mm^2 or pix^2? Input m/p as string');
 align = input('Rough or tight alignment? Input r/t as string');
 km = input('Complete kmeans clustering analysis? Input y/n as string');
@@ -102,7 +102,7 @@ for block =blocks
         %exist, this indicates more than one object was identified. This
         %allows for proper selection of the pupil as object to fit circle.
     
-        if orientation == 180
+        if orientation == 90
             if isempty(x)
                 x = []; 
             elseif ~isempty(x) &&  isempty(center_row)
