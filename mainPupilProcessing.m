@@ -384,7 +384,7 @@ save(strcat(saveBaseFolder,'\',mouse,'\',num2str(date),'\',num2str(date),'_proc.
 % be normalized (pup_norm_unsmoothed, pup_norm_10, or pup_norm_30)
 if strcmp('y',km)
     [clusterlow,clusterhigh,transitionSmall,transitionLarge,classificationSmallTrans,...
-        classificationLargeTrans,classificationNoTrans,C]=analysis.kmeans_pupil_v3(pup_norm_10);
+        classificationLargeTrans,classificationNoTrans,C]=analysis.kmeans_pupil_v3(pup_norm_unsmoothed);
     save(strcat(saveBaseFolder,'\',mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'clusterlow','clusterhigh',...
         'transitionSmall','transitionLarge','classificationSmallTrans','classificationLargeTrans','classificationNoTrans','C','-append');
 end
@@ -394,7 +394,7 @@ end
 % or not
 if strcmp('y',dilcon)
     [Cpts,Dpts,dEvents,dDuration,dMagnitude,cEvents,cDuration,cMagnitude,AVG_cDuration,AVG_dDuration,AVG_dMagnitude,...
-        AVG_cMagnitude,new_Cpts,new_Dpts,ff]=analysis.dil_con_events_no_constraints_v2(pup_norm_10,blockTransitions); 
+        AVG_cMagnitude,new_Cpts,new_Dpts,ff]=analysis.dil_con_events_no_constraints_v2(pup_norm_unsmoothed,blockTransitions); 
     save(strcat(saveBaseFolder,'\',mouse,'\', num2str(date),'_proc.mat'),'Cpts','Dpts','dEvents','dDuration',....
         'dMagnitude','cEvents','cDuration','cMagnitude','AVG_cDuration','AVG_dDuration','AVG_dMagnitude',...
         'AVG_cMagnitude','new_Cpts','new_Dpts','ff','-append');
