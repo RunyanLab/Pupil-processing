@@ -9,7 +9,7 @@
 % User inputs information about the current dataset
 mouse = input('Whats the mouse ID? Please input as string');
 date = input('Date?');
-sampling_rate_in_hz=input('What is the frame rate fo the camera?');
+sampling_rate_in_hz=input('What is the frame rate of the camera?');
 threshold = input('Threshold?'); 
 orientation = input('What is the orientation of the camera? 0(normal)/90(rotated)');
 unit = input('mm^2 or pix^2? Input m/p as string');
