@@ -32,7 +32,7 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 
 rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
 acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
-tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P LC\',mouse,'\',num2str(date),'_burst\');
+tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P LC\',mouse,'\',mouse,'_',num2str(date),'\');
 saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
 
 d = dir(strcat(rawDataFolder,'\MATLAB_*.avi'));
@@ -264,7 +264,7 @@ for block =blocks
         the_radii= the_radii_cut;
         the_areas = (the_radii.^2).*pi;
         the_areas_compare = (the_radii.^2).*pi;
-        blink_threshold = 2000;
+        blink_threshold = 500;
     end
     
     %eliminating blinks
@@ -300,6 +300,7 @@ for block =blocks
         %eliminate measurements outside of physiologically possible range
         %the_areas(the_areas >5) = NaN; 
         %the_areas(the_areas<.05) = NaN;
+        the_areas(the_areas ==0)=NaN;
 
     %interpolate across eliminated artifacts
     x = 1:length(the_areas);
@@ -361,7 +362,7 @@ for block =blocks
 
 end
 
-keep mouse blocks date alignment km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct ;
+keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tsereiesBaseFolder;
 
 %% Aligning pupil trace concatenated across blocks to imaging data 
 if strcmp('t',align)
@@ -371,7 +372,7 @@ if strcmp('t',align)
 else
     [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
         aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
-        pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_rough(pupil_struct);
+        pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder);
 end
 %cd(saveBaseFolder)
 mkdir([saveBaseFolder mouse '\' num2str(date)]);
