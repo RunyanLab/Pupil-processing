@@ -32,7 +32,7 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 
 rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
 acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
-tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P LC\',mouse,'\',mouse,'_',num2str(date),'\');
+tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'\',mouse,'_',num2str(date),'\');
 saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
 
 d = dir(strcat(rawDataFolder,'\MATLAB_*.avi'));
@@ -89,7 +89,7 @@ for block =blocks
         %   eliminate locations where pupil has the possibility of appearing. 
 
         L(1:275,:) = 0; 
-        L(:,1:150) =0;
+        L(:,1:95) =0;
         %L(:,250:end)=0;
         %L(670:end,:) = 0;
         BW1 = edge(L,'Canny'); 
@@ -264,7 +264,7 @@ for block =blocks
         the_radii= the_radii_cut;
         the_areas = (the_radii.^2).*pi;
         the_areas_compare = (the_radii.^2).*pi;
-        blink_threshold = 500;
+        blink_threshold = 2000;
     end
     
     %eliminating blinks
@@ -362,7 +362,7 @@ for block =blocks
 
 end
 
-keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tsereiesBaseFolder;
+keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tseriesBaseFolder;
 
 %% Aligning pupil trace concatenated across blocks to imaging data 
 if strcmp('t',align)
@@ -376,7 +376,7 @@ else
 end
 %cd(saveBaseFolder)
 mkdir([saveBaseFolder mouse '\' num2str(date)]);
-save(strcat(saveBaseFolder,'\',mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'aligned_pupil_unsmoothed',...
+save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'aligned_pupil_unsmoothed',...
     'pup_norm_30','pup_norm_10','pup_norm_unsmoothed','aligned_pupil_smoothed30',...
     'aligned_pupil_smoothed10','aligned_x_position','aligned_y_position','blockTransitions');
 
@@ -386,7 +386,7 @@ save(strcat(saveBaseFolder,'\',mouse,'\',num2str(date),'\',num2str(date),'_proc.
 if strcmp('y',km)
     [clusterlow,clusterhigh,transitionSmall,transitionLarge,classificationSmallTrans,...
         classificationLargeTrans,classificationNoTrans,C]=analysis.kmeans_pupil_v3(pup_norm_unsmoothed);
-    save(strcat(saveBaseFolder,'\',mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'clusterlow','clusterhigh',...
+    save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'clusterlow','clusterhigh',...
         'transitionSmall','transitionLarge','classificationSmallTrans','classificationLargeTrans','classificationNoTrans','C','-append');
 end
 
@@ -396,7 +396,7 @@ end
 if strcmp('y',dilcon)
     [Cpts,Dpts,dEvents,dDuration,dMagnitude,cEvents,cDuration,cMagnitude,AVG_cDuration,AVG_dDuration,AVG_dMagnitude,...
         AVG_cMagnitude,new_Cpts,new_Dpts,ff]=analysis.dil_con_events_no_constraints_v2(pup_norm_unsmoothed,blockTransitions); 
-    save(strcat(saveBaseFolder,'\',mouse,'\', num2str(date),'_proc.mat'),'Cpts','Dpts','dEvents','dDuration',....
+    save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\', num2str(date),'_proc.mat'),'Cpts','Dpts','dEvents','dDuration',....
         'dMagnitude','cEvents','cDuration','cMagnitude','AVG_cDuration','AVG_dDuration','AVG_dMagnitude',...
         'AVG_cMagnitude','new_Cpts','new_Dpts','ff','-append');
 end
