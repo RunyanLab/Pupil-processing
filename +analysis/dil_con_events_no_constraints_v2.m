@@ -137,10 +137,10 @@ plot(time,ff,time(Dpts),ff(Dpts),'r*',time(Cpts),ff(Cpts),'k*')
    
   new_Cpts=cellfun(@(v)v(1),dEvents);
   new_Dpts=cellfun(@(v)v(end),dEvents); 
-  
+
      
     %mak a new dMagnitude that is just dpt-cpt
-    new_dMagnitude=new_Dpts(1,:)-new_Cpts(1,:);
+%     new_dMagnitude=new_Dpts(1,:)-new_Cpts(1,:);
     
 
   
@@ -152,25 +152,26 @@ plot(time,ff,time(Dpts),ff(Dpts),'r*',time(Cpts),ff(Cpts),'k*')
   
   
   
-     %make constraint threshold events with magnitude greater than 0.7
-for i = 1:length(new_dMagnitude)
-    if new_dMagnitude(i)<0.4
-        new_dMagnitude(i)=NaN;
-        new_Cpts(1,i)=NaN;
-        new_Dpts(1,i)=NaN;
-    end
-end
-    delete_inds=isnan(new_dMagnitude);
-    new_dMagnitude(isnan(new_dMagnitude))=[];
-    new_Cpts(:,delete_inds==1)=[];
-    new_Dpts(:,delete_inds==1)=[];
-    
-    
-    figure(1000)
-    clf
-    
- plot(time,ff,time(new_Dpts(2,:)),ff(new_Dpts(2,:)),'r*',time(new_Cpts(2,:)),ff(new_Cpts(2,:)),'k*')      
-
+     %make constraint threshold events with magnitude greater than 0.7 - i
+     %use this for my data but didn't do it for christine's
+% for i = 1:length(new_dMagnitude)
+%     if new_dMagnitude(i)<0.4
+%         new_dMagnitude(i)=NaN;
+%         new_Cpts(1,i)=NaN;
+%         new_Dpts(1,i)=NaN;
+%     end
+% end
+%     delete_inds=isnan(new_dMagnitude);
+%     new_dMagnitude(isnan(new_dMagnitude))=[];
+%     new_Cpts(:,delete_inds==1)=[];
+%     new_Dpts(:,delete_inds==1)=[];
+%     
+%     
+%     figure(1000)
+%     clf
+%     
+%  plot(time,ff,time(new_Dpts(2,:)),ff(new_Dpts(2,:)),'r*',time(new_Cpts(2,:)),ff(new_Cpts(2,:)),'k*')      
+% 
 
  
   
@@ -227,30 +228,30 @@ end
     
         
   
-     figure(18)
-  clf
-  subplot(2,1,1);
-histogram(dDuration,edges)
-%line([AVG_dDuration AVG_dDuration], get(gca, 'ylim'));
-title('dilations')
-subplot(2,1,2)
-histogram(cDuration,edges)
-%line([AVG_cDuration AVG_cDuration], get(gca, 'ylim'));
-title('constrictions')
-xlabel('time(s)')
-ylabel('#events')
-
-figure(19)
-clf
-edges = 0:0.00005:0.0035;
-  subplot(2,1,1);
-histogram(dMagnitude,edges)
-line([AVG_dMagnitude AVG_dMagnitude], get(gca, 'ylim'));
-title('dilations')
-subplot(2,1,2)
-histogram(cMagnitude,edges)
-line([AVG_cMagnitude AVG_cMagnitude], get(gca, 'ylim'));
-title('constrictions')
-xlabel('average change across event')
-ylabel('#events')
+%      figure(18)
+%   clf
+%   subplot(2,1,1);
+% histogram(dDuration,edges)
+% %line([AVG_dDuration AVG_dDuration], get(gca, 'ylim'));
+% title('dilations')
+% subplot(2,1,2)
+% histogram(cDuration,edges)
+% %line([AVG_cDuration AVG_cDuration], get(gca, 'ylim'));
+% title('constrictions')
+% xlabel('time(s)')
+% ylabel('#events')
+% 
+% figure(19)
+% clf
+% edges = 0:0.00005:0.0035;
+%   subplot(2,1,1);
+% histogram(dMagnitude,edges)
+% line([AVG_dMagnitude AVG_dMagnitude], get(gca, 'ylim'));
+% title('dilations')
+% subplot(2,1,2)
+% histogram(cMagnitude,edges)
+% line([AVG_cMagnitude AVG_cMagnitude], get(gca, 'ylim'));
+% title('constrictions')
+% xlabel('average change across event')
+% ylabel('#events')
  
