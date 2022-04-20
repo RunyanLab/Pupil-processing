@@ -12,6 +12,7 @@ date = input('Date?');
 sampling_rate_in_hz=input('What is the frame rate of the camera?');
 threshold = input('Threshold?'); 
 orientation = input('What is the orientation of the camera? 0(normal)/90(rotated)');
+rig = input('What rig did you collect data using? inv/2p+');
 unit = input('mm^2 or pix^2? Input m/p as string');
 align = input('Rough or tight alignment? Input r/t as string');
 km = input('Complete kmeans clustering analysis? Input y/n as string');
@@ -248,15 +249,19 @@ for block =blocks
     center_column_cut = center_column(first_index:last_index);
     
     %converting pix^2 to mm^2
-    if strcmp('m', unit)
-        the_radii = the_radii_cut.*0.00469426267; 
-   %Adjust conversion factor according to camera and settings: 
+       %Adjust conversion factor according to camera and settings: 
     %Camera on 2P investigator:
         %1024 x 1280 pix res --> conversion factor = 0.00469426267
         %512 x 640 pix res --> conversion factor = 0.00949848
     %Camera on 2P+:
-        %1024 x 1280 pix res --> conversion factor = 0.01171303
+        %1024 x 1280 pix res --> conversion factor = 0.01147684
         %512 x 640 pix res --> conversion factor = 0.02324933
+    if strcmp('m', unit) 
+        if strcmp('inv',rig)
+            the_radii = the_radii_cut.*0.00469426267; 
+        else
+            the_radii= the_radii_cut.*0.01147684;
+        end
         the_areas = (the_radii.^2).*pi;
         the_areas_compare = (the_radii.^2).*pi;
         blink_threshold = .1;
