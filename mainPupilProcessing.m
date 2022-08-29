@@ -32,7 +32,7 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 % in lightblocking,camera angle, focus, etc.
 
 rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
-acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
+%acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
 tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'\',mouse,'_',num2str(date),'\');
 saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
 
@@ -41,11 +41,30 @@ d = dir(strcat(rawDataFolder,'\MATLAB_*.avi'));
     
 blocks = 1:size(d,1); %each movie within a imaging session date is considered a separate block 
 
+%% Establish eye ROI and corneal reflections
+
+exp_obj = VideoReader(strcat('MATLAB_000',num2str(blocks(1)),'.avi'));
+the_example_image = read(exp_obj,(exp_obj.NumberOfFrames)/2);
+rows = size(the_example_image,1);
+columns = size(the_example_image,2);
+imshow(the_example_image)
+hold on 
+eye = drawellipse;
+pause;
+eyeMask = poly2mask(eye.Vertices(:,1), eye.Vertices(:,2) , rows, columns);
+
+
+cornealReflection = drawellipse;
+pause
+cornMask = poly2mask(cornealReflection.Vertices(:,1), cornealReflection.Vertices(:,2) , rows, columns);
+
+
 %% Loop through all blocks
 % For each block this will read out each frame, identify pupil ROI, get
 % area meaurment for circle made, remove blinks and other artifacts from
 % trace, save individual files for each block and a structure containing
 % variables pertaining to each block 
+
 for block =blocks
    
     if block<10
@@ -55,19 +74,21 @@ for block =blocks
     end
     
     NumberOfFrames = obj.NumberOfFrames;
+
     
     %Initailize variables 
     the_areas = [];
     raw_radii = [];
     center_row = [];
     center_column = [];
-    the_image = read(obj,100);
-    rows = size(the_image,1);
-    columns = size(the_image,2);
     all_ridx = zeros(1,NumberOfFrames);
     all_cidx = zeros(1,NumberOfFrames);
+
+
+
+
     
-    %Converts each frame to BW matrix based on threshold 
+    %Converts each frame to BW matrix based on threshold
     for cnt = 1:NumberOfFrames  
         the_image = read(obj,cnt);
         if size(the_image,3)==3
@@ -80,135 +101,17 @@ for block =blocks
         
      % Tagged objects in BW image
         L = bwlabel(piel);
-       
-        %   You may wish to set some contraints on the location within the
-        %   image that pupil ROI can exist in order to minimize cases where
-        %   the function identifies an object outside of pupil as pupil.
-        %   You can eliminate rows/columns where it is impossible for pupil to occur
-        %   (ex along edges of fov). 
-        %   Note: this will likely differ across datasets, be sure not to
-        %   eliminate locations where pupil has the possibility of appearing. 
+        L(~eyeMask)=0;
+        L(cornMask)=0;
 
-        L(1:275,:) = 0; 
-        L(:,1:95) =0;
-        %L(:,250:end)=0;
-        %L(670:end,:) = 0;
+
         BW1 = edge(L,'Canny'); 
         [row,column] = find(BW1);
         x = vertcat(row',column'); %x is the input indices used to fit the circle
-        
-  
-        
-        %looks for gaps in distribution of object locations - if gaps
-        %exist, this indicates more than one object was identified. This
-        %allows for proper selection of the pupil as object to fit circle.
-    
-        if orientation == 90
-            if isempty(x)
-                x = []; 
-            elseif ~isempty(x) &&  isempty(center_row)
-                bott=find(x(1,:)>=prctile(x(1,:),80)); %only want to input the top and bottom 20% of x into fitcircles to allow a more accurate circle be fit to frames where pupil is partially occurlied by eyelid
-                top=find(x(1,:)<=prctile(x(1,:),20));
-                ind = union(bott,top);
-                x = x(:,ind);          
-            else
-                groupID = dbscan(x',5,5);
-                groupID = groupID';
-                if max(groupID)== 1
-                    bott=find(x(1,:)>=prctile(x(1,:),80)); 
-                    top=find(x(1,:)<=prctile(x(1,:),20));
-                    ind = union(bott,top);
-                    x = x(:,ind);
-                else
-                    row_means = [];
-                    col_means = [];
-                    for group = 1:max(groupID)
-                        row_means = [row_means mean(x(1,groupID == group))];
-                    end
-                    for group = 1:max(groupID)
-                        col_means = [col_means mean(x(2,groupID == group))];
-                    end
-                    [~,ridx] = min(abs(center_row(cnt-1)-row_means));
-                    %all_ridx(cnt) = ridx;
-                    [~,cidx] = min(abs(center_column(cnt-1)-col_means));
-                    %all_ridx(cnt) = ridx;
-                    if ridx~=cidx 
-                        %x = x(:,groupID == max(ridx));
-                        x = x(:,groupID == 1);
-                        all_ridx(cnt) = 1;
-                        all_cidx(cnt) = 1;
-                        bott = find(x(1,:)>=prctile(x(1,:),80));
-                        top = find(x(1,:)<=prctile(x(1,:),20));
-                        ind = union(bott,top);
-                        x = x(:,ind);
-                    else
-                        x = x(:,groupID == ridx);
-                        all_ridx(cnt) = ridx;
-                        all_cidx(cnt) = cidx;
-                        bott = find(x(1,:)>=prctile(x(1,:),80));
-                        top = find(x(1,:)<=prctile(x(1,:),20));
-                        ind = union(bott,top);
-                        x = x(:,ind);
-                    end
-                end
-            end
-        else
-            if isempty(x)
-                x = []; 
-            elseif ~isempty(x) &&  isempty(center_row)
-                bott=find(x(2,:)>=prctile(x(2,:),80)); %only want to input the top and bottom 20% of x into fitcircles to allow a more accurate circle be fit to frames where pupil is partially occurlied by eyelid
-                top=find(x(2,:)<=prctile(x(2,:),20));
-                ind = union(bott,top);
-                x = x(:,ind);          
 
-            else
-                groupID = dbscan(x',5,5);
-                groupID = groupID';
-                if max(groupID)== 1
-                    bott=find(x(2,:)>=prctile(x(2,:),80)); 
-                    top=find(x(2,:)<=prctile(x(2,:),20));
-                    ind = union(bott,top);
-                    x = x(:,ind);
-                else
-                    row_means = [];
-                    col_means = [];
-                    for group = 1:max(groupID)
-                        row_means = [row_means mean(x(1,groupID == group))];
-                    end
-                    for group = 1:max(groupID)
-                        col_means = [col_means mean(x(2,groupID == group))];
-                    end
-                    [~,ridx] = min(abs(center_row(cnt-1)-row_means));
-                    %all_ridx(cnt) = ridx;
-                    [~,cidx] = min(abs(center_column(cnt-1)-col_means));
-                    %all_ridx(cnt) = ridx;
-                    TFmatch = ridx == cidx;
-                    if TFmatch==0
-                        %x = x(:,groupID == max(ridx));
-                        x = x(:,groupID == 1);
-                        all_ridx(cnt) = 1;
-                        all_cidx(cnt) = 1;
-                        bott = find(x(2,:)>=prctile(x(2,:),80));
-                        top = find(x(2,:)<=prctile(x(2,:),20));
-                        ind = union(bott,top);
-                        x = x(:,ind);
-                    else
-                        x = x(:,groupID == ridx);
-                        all_ridx(cnt) = ridx;
-                        all_cidx(cnt) = cidx;
-                        bott = find(x(2,:)>=prctile(x(2,:),80));
-                        top = find(x(2,:)<=prctile(x(2,:),20));
-                        ind = union(bott,top);
-                        x = x(:,ind);
-                    end
-                end
-            end
-         end
-      
-      
-      
-      
-      
+    
+        x=processing.getROIcoordinates(orientation,x,center_row,center_column,all_ridx,all_cidx,cnt);    
+        
       
       try
           [z, r, residual] = processing.fitcircle_mcc(x,'linear');
@@ -217,6 +120,7 @@ for block =blocks
           r = [];
       end
       
+
       %how to handle blank frames
       if isempty(r)
           radius = 0;
@@ -314,22 +218,9 @@ for block =blocks
     yi = y(find(~isnan(y)));
 
     corrected_areas = interp1(xi,yi,x);
-    %corrected_areas_mm_test = interp1(xi,yi,x);
-    %figure(91)
-    %clf
-    %plot(corrected_areas_mm) 
-    %hold on 
-    %plot(corrected_areas_mm_test)
-    %corrected_areas_mm = interp1(xi,yi,x);
 
     blink_inds=find(isnan(the_areas)==1); 
-    %the_centers_cut(blink_inds)=NaN;
-    %a = 1:length(the_centers_cut);
-    %b = the_centers_cut;
-    %ai = a(find(~isnan(b)));
-    %bi = b(find(~isnan(b)));
-    %corrected_centers = interp1(ai,bi,a); %centers with blinks interpolated 
-    %corrected_centers(1:20)=corrected_centers(21);
+
 
 
     pupil_smoothed10=utils.smooth_median(corrected_areas,10,'gaussian','median');
@@ -367,7 +258,7 @@ for block =blocks
 
 end
 
-keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tseriesBaseFolder;
+keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tseriesBaseFolder eye cornealReflection;
 
 %% Aligning pupil trace concatenated across blocks to imaging data 
 if strcmp('t',align)
