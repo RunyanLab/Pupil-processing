@@ -12,8 +12,6 @@ date = input('Date?');
 sampling_rate_in_hz=input('What is the frame rate of the camera?');
 threshold = input('Threshold?'); 
 orientation = input('What is the orientation of the camera? 0(normal)/90(rotated)');
-rig = input('What rig did you collect data using? inv/2p+');
-unit = input('mm^2 or pix^2? Input m/p as string');
 align = input('Rough or tight alignment? Input r/t as string');
 km = input('Complete kmeans clustering analysis? Input y/n as string');
 dilcon= input('Complete dilation/constriction event identificaton? Input y/n as string');
@@ -31,19 +29,19 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 % of code, may need to be changed across datasets if you notice differences
 % in lightblocking,camera angle, focus, etc.
 
-rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
+rawDataFolder =strcat('\\136.142.49.216\Runyan2\Michael\Pupil Movies\',mouse,'\',num2str(date),'\'); 
 %acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
-tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'\',mouse,'_',num2str(date),'\');
-saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
+%tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'\',mouse,'_',num2str(date),'\');
+saveBaseFolder ='\\136.142.49.216\Runyan2\Michael\Pupil Movies\Processed Pupil\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
 
-d = dir(strcat(rawDataFolder,'\MATLAB_*.avi'));
+d = dir(strcat(rawDataFolder,'*.avi'));
     cd(rawDataFolder);
     
 blocks = 1:size(d,1); %each movie within a imaging session date is considered a separate block 
 
 %% Establish eye ROI and corneal reflections
 
-exp_obj = VideoReader(strcat('MATLAB_000',num2str(blocks(1)),'.avi'));
+exp_obj = VideoReader(d(blocks).name);
 the_example_image = read(exp_obj,(exp_obj.NumberOfFrames)/2);
 rows = size(the_example_image,1);
 columns = size(the_example_image,2);
@@ -94,7 +92,9 @@ for block =blocks
         if size(the_image,3)==3
             the_image = rgb2gray(the_image);
         end
-        piel = im2bw(the_image,threshold); 
+         inv=imcomplement(the_image);
+        piel = im2bw(inv,threshold);
+        
         piel = bwmorph(piel,'open');
         piel = bwareaopen(piel,200);
         piel = imfill(piel,'holes');
@@ -145,36 +145,11 @@ for block =blocks
       center_column = [center_column center(1,1)];
     end
     
-    % manipulations on the raw trace of current block
-    first_index = find(raw_radii,1,'first'); %2p acquisition onset
-    last_index = find(raw_radii,1,'last'); %2p offset
-    the_radii_cut = raw_radii(first_index:last_index);
-    center_row_cut = center_column(first_index:last_index);
-    center_column_cut = center_column(first_index:last_index);
-    
-    %converting pix^2 to mm^2
-       %Adjust conversion factor according to camera and settings: 
-    %Camera on 2P investigator:
-        %1024 x 1280 pix res --> conversion factor = 0.00469426267
-        %512 x 640 pix res --> conversion factor = 0.00949848
-    %Camera on 2P+:
-        %1024 x 1280 pix res --> conversion factor = 0.01147684
-        %512 x 640 pix res --> conversion factor = 0.02324933
-    if strcmp('m', unit) 
-        if strcmp('inv',rig)
-            the_radii = the_radii_cut.*0.00469426267; 
-        else
-            the_radii= the_radii_cut.*0.01147684;
-        end
+            the_radii = raw_radii.*0.00469426267; %need to get conversion factor
+   
         the_areas = (the_radii.^2).*pi;
         the_areas_compare = (the_radii.^2).*pi;
-        blink_threshold = .1;
-    else
-        the_radii= the_radii_cut;
-        the_areas = (the_radii.^2).*pi;
-        the_areas_compare = (the_radii.^2).*pi;
-        blink_threshold = 2000;
-    end
+        blink_threshold = .1; %test blink threshold once conversion factor found
     
     %eliminating blinks
     blinks_data_positions = processing.noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold);
@@ -236,17 +211,15 @@ for block =blocks
 
 
     the_areas_compare = (the_radii.^2).*pi;
-    pupil.center_position.center_column = center_column_cut;
-    pupil.center_position.center_row = center_row_cut;
+    pupil.center_position.center_column = center_column;
+    pupil.center_position.center_row = center_row;
     pupil.area.corrected_areas=corrected_areas;
     pupil.area.uncorrected_areas = the_areas_compare;
     pupil.area.smoothed_30_timeframes = pupil_smoothed30;
     pupil.area.smoothed_10_timeframes = pupil_smoothed10;
-    pupil.radii.uncut_uncorrected_radii =  raw_radii;
-    pupil.radii.cut_uncorrected_radii = the_radii;
+    pupil.radii.pixels_uncorrected_radii =  raw_radii;
+    pupil.radii.mm_uncorrected_radii = the_radii;
     pupil.blink = blink_inds;
-    pupil.galvo_on = first_index; 
-    pupil.galvo_off = last_index;
 
     if block<10
         save(strcat(mouse,'_000',num2str(block),'.mat'),'pupil');
