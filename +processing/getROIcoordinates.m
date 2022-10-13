@@ -1,4 +1,4 @@
-function  x=getROIcoordinates(orientation,x,center_row,center_column,all_ridx,all_cidx,cnt)
+function  x=getROIcoordinates(orientation,x,center_row,center_column,cnt)
 
 %changed this so that the true top and bottom of the pupil are used to
 %estimate the circle, bc that diameter is less susceptible to
@@ -12,7 +12,7 @@ function  x=getROIcoordinates(orientation,x,center_row,center_column,all_ridx,al
 
 
 
-if orientation == 0 %used to be 90
+if orientation == 90 %used to be 90
     if isempty(x)
         x = []; 
     elseif ~isempty(x) &&  isempty(center_row)
@@ -43,17 +43,13 @@ if orientation == 0 %used to be 90
             %all_ridx(cnt) = ridx;
             if ridx~=cidx 
                 %x = x(:,groupID == max(ridx));
-                x = x(:,groupID == 1);
-                all_ridx(cnt) = 1;
-                all_cidx(cnt) = 1;
+                x = x(:,groupID == mode(groupID));
                 bott = find(x(1,:)>=prctile(x(1,:),80));
                 top = find(x(1,:)<=prctile(x(1,:),20));
                 ind = union(bott,top);
                 x = x(:,ind);
             else
                 x = x(:,groupID == ridx);
-                all_ridx(cnt) = ridx;
-                all_cidx(cnt) = cidx;
                 bott = find(x(1,:)>=prctile(x(1,:),80));
                 top = find(x(1,:)<=prctile(x(1,:),20));
                 ind = union(bott,top);
@@ -90,21 +86,16 @@ else
             [~,ridx] = min(abs(center_row(cnt-1)-row_means));
             %all_ridx(cnt) = ridx;
             [~,cidx] = min(abs(center_column(cnt-1)-col_means));
-            %all_ridx(cnt) = ridx;
-            TFmatch = ridx == cidx;
-            if TFmatch==0
+            %all_ridx(cnt) = ridx; 
+            if ridx ~= cidx
                 %x = x(:,groupID == max(ridx));
-                x = x(:,groupID == 1);
-                all_ridx(cnt) = 1;
-                all_cidx(cnt) = 1;
+                x = x(:,groupID == mode(groupID));
                 bott = find(x(2,:)>=prctile(x(2,:),80));
                 top = find(x(2,:)<=prctile(x(2,:),20));
                 ind = union(bott,top);
                 x = x(:,ind);
             else
                 x = x(:,groupID == ridx);
-                all_ridx(cnt) = ridx;
-                all_cidx(cnt) = cidx;
                 bott = find(x(2,:)>=prctile(x(2,:),80));
                 top = find(x(2,:)<=prctile(x(2,:),20));
                 ind = union(bott,top);

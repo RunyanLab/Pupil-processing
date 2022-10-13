@@ -43,12 +43,41 @@ d = dir(strcat(rawDataFolder,'\MATLAB_*.avi'));
     
 blocks = 1:size(d,1); %each movie within a imaging session date is considered a separate block 
 
+%% Establish eye ROI and corneal reflections
+
+exp_obj = VideoReader(strcat('MATLAB_000',num2str(blocks(1)),'.avi'));
+the_example_image = read(exp_obj,(exp_obj.NumberOfFrames)/2);
+rows = size(the_example_image,1);
+columns = size(the_example_image,2);
+figure()
+imshow(the_example_image)
+hold on 
+eye = drawellipse;
+pause;
+eyeMask = poly2mask(eye.Vertices(:,1), eye.Vertices(:,2) , rows, columns);
+
+
+cornealReflection_0 = drawellipse;
+pause
+cornMask = poly2mask(cornealReflection_0.Vertices(:,1), cornealReflection_0.Vertices(:,2) , rows, columns);
+moreCR = input('Would you like to input another corneal reflection? 0/1 \n');
+num = 0;
+additional_cornMask=[];
+while moreCR ==1
+    num=num+1;
+   additional_cornealReflection = drawellipse;
+   pause
+   additional_cornMask{num} = poly2mask(additional_cornealReflection.Vertices(:,1), additional_cornealReflection.Vertices(:,2) , rows, columns);
+   moreCR = input('Would you like to input another corneal reflection? 0/1 \n');
+end
+
+
 %% Loop through all blocks
 % For each block this will read out each frame, identify pupil ROI, get
 % area meaurment for circle made, remove blinks and other artifacts from
 % trace, save individual files for each block and a structure containing
 % variables pertaining to each block 
-for block =blocks
+for block =3:blocks(end)
    
     if block<10
         obj = VideoReader(strcat('MATLAB_000',num2str(block),'.avi')); %reads video file properites
@@ -63,11 +92,7 @@ for block =blocks
     raw_radii = [];
     center_row = [];
     center_column = [];
-    the_image = read(obj,100);
-    rows = size(the_image,1);
-    columns = size(the_image,2);
-    all_ridx = zeros(1,NumberOfFrames);
-    all_cidx = zeros(1,NumberOfFrames);
+
     
     %Converts each frame to BW matrix based on threshold 
     for cnt = 1:NumberOfFrames  
@@ -75,109 +100,50 @@ for block =blocks
         if size(the_image,3)==3
             the_image = rgb2gray(the_image);
         end
-        piel = im2bw(the_image,threshold); 
+        piel = im2bw(the_image,threshold);
+        
+
         piel = bwmorph(piel,'open');
         piel = bwareaopen(piel,200);
         piel = imfill(piel,'holes');
         
+
      % Tagged objects in BW image
         L = bwlabel(piel);
-       
-        %User inputs ROI of eye and corneal reflection (best to
-        %overestimate corneal reflection ROI) then all pixels outside of
-        %eye ROI and inside of corneal reflection ROI are set to 0 (black)
-        if cnt == 1
-            figure(100)
-            clf
-            imshow(the_image)
-            hold on 
-            w=plot([540,740],[512,512],'-r');
-            h=plot([640,640],[412,612],'-r');
-            moveplot(h,'xy');
-            moveplot(w,'xy');
-            figure(100)
-            pause()
-            moveplot(h,'off')
-            moveplot(w,'off')
-            wc=plot([590,690],[512,512],'-b');
-            hc=plot([640,640],[462,562],'-b');
-            moveplot(hc,'xy');
-            moveplot(wc,'xy');
-            figure(100)
-            pause()
-            leftright = w.XData;
-            updown = h.YData;
-            cornRefx=wc.XData;
-            cornRefy=hc.YData;
+        L(~eyeMask)=0;
+        L(cornMask)=0;
+        if ~isempty(additional_cornMask)
+            for corn=1:length(additional_cornMask)
+                L(additional_cornMask{corn})=0;
+            end
         end
-        L(:,1:ceil(leftright(1)))=0;
-        L(:,floor(leftright(2)):end)=0;
-        L(1:ceil(updown(1)),:)=0;
-        L(floor(updown(2)):end,:)=0;
-        if ~isempty(cornRefy)
-            L(cornRefy(1):cornRefy(2),cornRefx(1):cornRefx(2))=0;
+        art_piel = im2bw(the_image,.8);
+        art_piel = bwmorph(art_piel,'open');
+%         art_piel = bwareaopen(art_piel,200);
+        art_piel = imfill(art_piel,'holes');
+        art_L = bwlabel(art_piel);
+        art_L(~eyeMask)=0;
+        art_L(cornMask)=0;
+        if ~isempty(additional_cornMask)
+            for corn = 1:length(additional_cornMask)
+                art_L(additional_cornMask{corn})=0;
+            end    
         end
-        
+        art_BW = edge(art_L,'canny');
+        [row,column] = find(art_BW);
+        art = vertcat(row',column');
+        artMask = utils.createCirclesMask(L,[median(art(2,:)),median(art(1,:))],20);
+
+        L(artMask)=0;
+%        
+
         BW1 = edge(L,'Canny'); 
         [row,column] = find(BW1);
         x = vertcat(row',column'); %x is the input indices used to fit the circle
-        
-  
-        
-        %looks for gaps in distribution of object locations - if gaps
-        %exist, this indicates more than one object was identified. This
-        %allows for proper selection of the pupil as object to fit circle.
+
     
-        if isempty(x) %completely blank frame (rare to happen with IR lamp on, frames before laser on will at least have a corneal reflection
-            x = []; 
-        elseif ~isempty(x) && cnt==1 % all frames before the laser turns on if IR light is on
-            groupID = dbscan(x',5,5);
-            groupID = groupID';
-            
-
-            for group = 1:max(groupID)
-                artifact{group}=x(:,groupID==group);
-                art_center(1,group) = mean(artifact{group}(1,:));
-                art_center (2,group)= mean(artifact{group}(2,:));
-                lrow(group)=max(x(1,groupID==group))-min(x(1,groupID==group));
-                lcol(group)=max(x(2,groupID==group))-min(x(2,groupID==group));
-            end
-            [~,ind] = min(abs(lrow-lcol));
-            cornRef=x(:,groupID==ind);
-
-
-            x=[];
-        else
-            groupID = dbscan(x',5,5);
-            groupID = groupID';
-            delete_x=[];
-            for group=1:max(groupID)
-                if find(abs(mean(x(1,groupID == group)) - art_center(1,:))<20)== find(abs(mean(x(2,groupID == group)) - art_center(2,:))<20) %may need to change this number 
-                    %groups_to_delete = [groups_to_delete find(abs(mean(x(1,groupID == group)) - art_center(1,:))<1)];
-                    delete_x = [delete_x x(:,groupID == group)];
-                end
-            end
-            if ~isempty(delete_x)
-                [C,ia,ib] = intersect(x',delete_x','rows');
-                x=x(:,setdiff(1:end,ia));
-            end
-            %remove the parts of x that are contained in cornRef
-            if orientation ==90
-                bott=find(x(1,:)>=prctile(x(1,:),80)); 
-                top=find(x(1,:)<=prctile(x(1,:),20));
-                ind = union(bott,top);
-                x = x(:,ind);
-            else
-                bott=find(x(2,:)>=prctile(x(2,:),80)); 
-                top=find(x(2,:)<=prctile(x(2,:),20));
-                ind = union(bott,top);
-                x = x(:,ind);
-            end
-
-        end
-    
-        
-                
+        x=processing.getROIcoordinates(orientation,x,center_row,center_column,cnt);    
+           
    
       try
           [z, r, residual] = processing.fitcircle_mcc(x,'linear');
@@ -211,6 +177,7 @@ for block =blocks
     end
     
     % manipulations on the raw trace of current block
+    raw_radii(raw_radii<10)=0;
     first_index = find(raw_radii,1,'first'); %2p acquisition onset
     last_index = find(raw_radii,1,'last'); %2p offset
     the_radii_cut = raw_radii(first_index:last_index);
