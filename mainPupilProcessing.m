@@ -4,6 +4,7 @@
 %   Processes AVI file of pupil, fitting circles around pupil ROI,
 %   generting artifact corrected frame by frame measurements of pupil area in
 %   mm^2 
+%This is the code for Pupil without laser emilination
 
 %% Setup 
 % User inputs information about the current dataset
