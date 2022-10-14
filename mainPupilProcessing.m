@@ -254,7 +254,7 @@ for block = 1:2
     %load pupil size vector for the current block 
     temp_pup=pupil_struct{1,block}.area.corrected_areas;
 
-    % create an evently spaced vector of pupil frame timepoints in ms,
+    % create an evenly spaced vector of pupil frame timepoints in ms,
     % starting with the first virmen iteration timepoint
     pupil_times= virm_it_times(1) + (0:length(temp_pup)-1)*100;
 
