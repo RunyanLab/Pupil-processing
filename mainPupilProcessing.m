@@ -32,7 +32,7 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 
 rawDataFolder =strcat('\\136.142.49.216\Runyan2\Michael\Pupil Movies\',mouse,'\',num2str(date),'\'); 
 %acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
-%tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'\',mouse,'_',num2str(date),'\');
+behaviorFolder='C:\Users\runyan1\Desktop\GF\BDGF-1-00';
 saveBaseFolder ='\\136.142.49.216\Runyan2\Michael\Pupil Movies\Processed Pupil\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
 
 d = dir(strcat(rawDataFolder,'*.avi'));
@@ -42,8 +42,8 @@ blocks = 1:size(d,1); %each movie within a imaging session date is considered a 
 
 %% Establish eye ROI and corneal reflections
 
-exp_obj = VideoReader(d(blocks).name);
-the_example_image = read(exp_obj,(exp_obj.NumberOfFrames)/2);
+exp_obj = VideoReader(d(blocks(1)).name);
+the_example_image = read(exp_obj,round((exp_obj.NumFrames)/2));
 rows = size(the_example_image,1);
 columns = size(the_example_image,2);
 imshow(the_example_image)
@@ -64,15 +64,12 @@ cornMask = poly2mask(cornealReflection.Vertices(:,1), cornealReflection.Vertices
 % trace, save individual files for each block and a structure containing
 % variables pertaining to each block 
 
-for block =blocks
-   
-    if block<10
-        obj = VideoReader(strcat('MATLAB_000',num2str(block),'.avi')); %reads video file properites
-    else
-        obj = VideoReader(strcat('MATLAB_00',num2str(block),'.avi'));
-    end
+for block =2
+  
+    obj = VideoReader(d(block).name); %reads video file properites
+
     
-    NumberOfFrames = obj.NumberOfFrames;
+    NumberOfFrames = obj.NumFrames;
 
     
     %Initailize variables 
@@ -127,8 +124,9 @@ for block =blocks
           radius = 0;
           center = zeros(2,1);
       else
-          [val,idx] = min(abs(raw_radii(cnt-1)-r));
-          radius = r(idx);
+%           [val,idx] = min(abs(raw_radii(cnt-1)-r));
+%           radius = r(idx);
+            radius = r;
           z([1 2]) = z([2 1]);
           center = z;
       end
@@ -146,11 +144,11 @@ for block =blocks
       center_column = [center_column center(1,1)];
     end
     
-            the_radii = raw_radii.*0.00469426267; %need to get conversion factor
+            the_radii = raw_radii.*1; %need to get conversion factor
    
         the_areas = (the_radii.^2).*pi;
         the_areas_compare = (the_radii.^2).*pi;
-        blink_threshold = .1; %test blink threshold once conversion factor found
+        blink_threshold = 10000; %test blink threshold once conversion factor found
     
     %eliminating blinks
     blinks_data_positions = processing.noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold);
@@ -232,23 +230,88 @@ for block =blocks
 
 end
 
-keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tseriesBaseFolder eye cornealReflection;
+keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct eyeMask cornMask d;
 
-%% Aligning pupil trace concatenated across blocks to imaging data 
-if strcmp('t',align)
-    [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
-        aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
-        pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_tight(acqFolder,blocks,pupil_struct);
-else
-    [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
-        aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
-        pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder);
+%% Roughly align pupil with first virmen iteration
+
+%loading the behavior files, these files must be separately aligned by the
+%start frame
+acq{1}=load(strcat(behaviorFolder,'\STGF-1-00_221007'));
+acq{2}=load(strcat(behaviorFolder,'\STGF-1-00_221007_1'));
+
+
+for block = 1:2
+    virm_it= acq{1,block}.data(1,:);
+
+    virm_it_times =[];
+    %convert the data matrix time points for each virmen iteration into ms 
+    for i = 1:length(virm_it)
+        virm_temp= strcat('1:',datestr(virm_it(i),'MM:SS.FFF'));
+        [~,~,~,~,MN,S] = datevec(virm_temp);
+        virm_it_times = [virm_it_times MN*60000+S*1000];
+    end
+    
+    %load pupil size vector for the current block 
+    temp_pup=pupil_struct{1,block}.area.corrected_areas;
+
+    % create an evently spaced vector of pupil frame timepoints in ms,
+    % starting with the first virmen iteration timepoint
+    pupil_times= virm_it_times(1) + (0:length(temp_pup)-1)*100;
+
+    %find the closest corresponding pupil frame (that has already occurred) for each virmen iteration 
+    pupil_in_virm_units=[];
+    for i =1:length(virm_it_times)
+        [val,ind]=min(abs(virm_it_times(i)-pupil_times));
+        
+        if virm_it_times(i)<pupil_times(ind)
+           closest_frame = ind-1;
+        else 
+            closest_frame=ind;
+        end
+
+        pupil_in_virm_units =[pupil_in_virm_units closest_frame];
+    end
+
+   %set each virmen iteration to the pupil size at the corresponding pupil
+   %frame
+    pupil_aligned_temp=temp_pup(pupil_in_virm_units);
+
+    if block ==1
+        pupil_aligned{1}=pupil_aligned_temp;
+    elseif block ==2
+        pupil_aligned{2}=pupil_aligned_temp;
+    end
+
+
+
 end
-%cd(saveBaseFolder)
-mkdir([saveBaseFolder mouse '\' num2str(date)]);
-save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'aligned_pupil_unsmoothed',...
-    'pup_norm_30','pup_norm_10','pup_norm_unsmoothed','aligned_pupil_smoothed30',...
-    'aligned_pupil_smoothed10','aligned_x_position','aligned_y_position','blockTransitions');
+
+
+
+
+
+
+
+
+
+
+
+
+% %% Aligning pupil trace concatenated across blocks to imaging data 
+% if strcmp('t',align)
+%     [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
+%         aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
+%         pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_tight(acqFolder,blocks,pupil_struct);
+% else
+%     [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
+%         aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
+%         pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder);
+% end
+% %cd(saveBaseFolder)
+% mkdir([saveBaseFolder mouse '\' num2str(date)]);
+% save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'aligned_pupil_unsmoothed',...
+%     'pup_norm_30','pup_norm_10','pup_norm_unsmoothed','aligned_pupil_smoothed30',...
+%     'aligned_pupil_smoothed10','aligned_x_position','aligned_y_position','blockTransitions');
 
 %% Optional K-means analysis
 % Use whichever pupil variable you prefer for you data, however it should

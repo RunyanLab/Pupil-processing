@@ -38,7 +38,7 @@ function blinks_data_positions = noise_blinks_v3(the_areas,sampling_rate_in_hz,b
     %% Smoothing the data in order to increase the difference between the measurement noise and the eyelid signal.
     ms_4_smooting  = 10;                                    % using a gap of 10 ms for the smoothing
     samples2smooth = ceil(ms_4_smooting/sampling_interval); % amount of samples to smooth 
-    smooth_data    = smooth(the_areas, samples2smooth);    
+    smooth_data    = utils.smooth(the_areas, samples2smooth);    
 
     smooth_data(smooth_data==0) = nan;                      % replace zeros with NaN values
     diff_smooth_data            = diff(smooth_data);
