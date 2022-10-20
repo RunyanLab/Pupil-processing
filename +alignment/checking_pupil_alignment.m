@@ -1,19 +1,22 @@
 %Checking why pupil is misaligned
 
+clear pupil dilation_starts discrete_pup pup_norm_10 pup_norm_30 pup_norm_unsmoothed...
+    pupil_all_blocks pupil_all_blocks_uncorrected pupil_block pupil_smoothed10 pupil_smoothed30 pupil_struct...
+    pupil_uncorrected_block
+
 sampling_rate_in_hz = 10;
 
 
-cd('\\runyan-fs-01\runyan3\Noelle\Pupil\Noelle Pupil\gc700\20220823\')
+cd('\\runyan-fs-01\runyan3\Noelle\Pupil\Noelle Pupil\gc700\20220809_reproc\20220809')
 z=dir('*.mat');
-for i = 1:size(z,1)-1
+for i = 1:size(z,1)
     load(z(i).name)
     pupil_struct{i}=pupil;
     clear pupil
 end
 
 
-
-
+%%
 for n = 1:length(pupil_struct)
     changed_start = 0;
     changed_end = 0;
@@ -115,13 +118,13 @@ for n = 1:length(pupil_struct)
 end
 
 
-
-frames_per_tseries = alignment.findframes_nf('\\runyan-fs-01\runyan3\Noelle\2P\2P LC\gc700\gc700_20220823\');
+%%
+frames_per_tseries = alignment.findframes_nf('\\runyan-fs-01\runyan3\Noelle\2P\2P LC\gc700\gc700_20220809\');
 
 pupil_all_blocks = [];
 pupil_all_blocks_uncorrected =[];
 
-for i=1:size(z,1)-1
+for i=1:size(z,1)
     pupil_block = imresize(pupil_struct{1,i}.area.corrected_areas,[1,frames_per_tseries(i)]);
     pupil_uncorrected_block = imresize(pupil_struct{1,i}.area.uncorrected_areas,[1,frames_per_tseries(i)]);
 
@@ -141,11 +144,12 @@ pup_norm_unsmoothed =(aligned_pupil_unsmoothed-mean(aligned_pupil_unsmoothed))/m
 
 
 
-
+%%
 %post-processing changes to artifact detection 
-blink_threshold = 600; 
+blink_threshold = 400; 
 sampling_rate_in_hz=30;
 
+aligned_pupil_compare = pupil_all_blocks;
 
 blinks_data_positions = processing.noise_blinks_v3(aligned_pupil_unsmoothed,sampling_rate_in_hz,blink_threshold);
     
@@ -177,7 +181,7 @@ blinks_data_positions = processing.noise_blinks_v3(aligned_pupil_unsmoothed,samp
             %eliminate measurements outside of physiologically possible range
             %the_areas(the_areas >5) = NaN; 
             %the_areas(the_areas<.05) = NaN;
-            aligned_pupil_unsmoothed(aligned_pupil_unsmoothed ==0)=NaN;
+            aligned_pupil_unsmoothed(aligned_pupil_unsmoothed <500)=NaN;
     
         %interpolate across eliminated artifacts
         x = 1:length(aligned_pupil_unsmoothed);
@@ -187,9 +191,35 @@ blinks_data_positions = processing.noise_blinks_v3(aligned_pupil_unsmoothed,samp
 
          corrected_aligned_pupil_unsmoothed = interp1(xi,yi,x);
 
+figure(10);clf;hold on;
+plot(aligned_pupil_compare)
+plot(corrected_aligned_pupil_unsmoothed)
 
 
-    
+
+aligned_pupil_unsmoothed=corrected_aligned_pupil_unsmoothed;
+aligned_pupil_smoothed10=utils.smooth_median(aligned_pupil_unsmoothed,10,'gaussian','median');
+aligned_pupil_smoothed30= utils.smooth_median(aligned_pupil_unsmoothed,30,'gaussian','median');
+aligned_pupil_smoothed100= utils.smooth_median(aligned_pupil_unsmoothed,100,'gaussian','median');
+aligned_pupil_smoothed70= utils.smooth_median(aligned_pupil_unsmoothed,70,'gaussian','median');
+
+pup_norm_30 =(aligned_pupil_smoothed30-mean(aligned_pupil_smoothed30))/mean(aligned_pupil_smoothed30);
+pup_norm_10 =(aligned_pupil_smoothed10-mean(aligned_pupil_smoothed10))/mean(aligned_pupil_smoothed10);
+pup_norm_unsmoothed =(aligned_pupil_unsmoothed-mean(aligned_pupil_unsmoothed))/mean(aligned_pupil_unsmoothed);
+pup_norm_100 =(aligned_pupil_smoothed100-mean(aligned_pupil_smoothed100))/mean(aligned_pupil_smoothed100);
+pup_norm_70 =(aligned_pupil_smoothed70-mean(aligned_pupil_smoothed70))/mean(aligned_pupil_smoothed70);
+
+
+
+%% get the dilation points 
+pupil = pup_norm_70;
+[dilation_starts_final]=analysis.dil_con_events_no_constraints_v3(pupil,blockTransitions);
+
+save('20220809_proc_final', 'dilation_starts_final','pup_norm_unsmoothed',...
+    'pup_norm_10','pup_norm_30','pup_norm_70','pup_norm_100','aligned_pupil_unsmoothed',...
+    'aligned_pupil_smoothed10','aligned_pupil_smoothed30','aligned_pupil_smoothed70',...
+    'aligned_pupil_smoothed100','blockTransitions');
+
         
 
 

@@ -42,9 +42,9 @@ end
     
 %if the first point is a cpts
 percentIncrease = (pks-pupil(cpts))./ abs(pupil(cpts))*100; 
-newpks = pks(percentIncrease>=60);
-newlocs=locs(percentIncrease>=60);
-newcpts=cpts(percentIncrease>=60);
+newpks = pks(percentIncrease>=70);
+newlocs=locs(percentIncrease>=70);
+newcpts=cpts(percentIncrease>=70);
 
 timeBetween = newlocs-newcpts;
 newpks = newpks(timeBetween>=30);
