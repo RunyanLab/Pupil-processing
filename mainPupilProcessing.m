@@ -31,7 +31,7 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 % of code, may need to be changed across datasets if you notice differences
 % in lightblocking,camera angle, focus, etc.
 
-rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'_reproc\',num2str(date),'\'); 
+rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
 %acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
 tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'_',num2str(date),'\');
 saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
@@ -44,7 +44,7 @@ blocks = 1:size(d,1); %each movie within a imaging session date is considered a 
 %% Establish eye ROI and corneal reflections
 
 exp_obj = VideoReader(strcat('MATLAB_000',num2str(blocks(1)),'.avi'));
-the_example_image = read(exp_obj,(exp_obj.NumberOfFrames)/2);
+the_example_image = read(exp_obj,round((exp_obj.NumberOfFrames)/2));
 rows = size(the_example_image,1);
 columns = size(the_example_image,2);
 figure()
@@ -140,8 +140,8 @@ for block =blocks
           radius = 0;
           center = zeros(2,1);
       else
-          [val,idx] = min(abs(raw_radii(cnt-1)-r));
-          radius = r(idx);
+          %[val,idx] = min(abs(raw_radii(cnt-1)-r));
+          radius = r;
           z([1 2]) = z([2 1]);
           center = z;
       end
@@ -272,6 +272,7 @@ for block =blocks
     pupil_struct{block} = pupil;    
 
 end
+save('pupil_struct','pupil_struct');
 
 keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tseriesBaseFolder eyeMask cornMask additional_conMask ;
 
