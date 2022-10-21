@@ -308,9 +308,11 @@ else
 end
 %cd(saveBaseFolder)
 mkdir([saveBaseFolder mouse '\' num2str(date)]);
-save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),'aligned_pupil_unsmoothed',...
-    'pup_norm_30','pup_norm_10','pup_norm_unsmoothed','aligned_pupil_smoothed30',...
-    'aligned_pupil_smoothed10','aligned_x_position','aligned_y_position','blockTransitions');
+save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),...
+    'aligned_pupil_unsmoothed','aligned_pupil_smoothed10','aligned_pupil_smoothed30',...
+    'aligned_pupil_smoothed70','aligned_pupil_smoothed100','pup_norm_30','pup_norm_10',...
+    'pup_norm_unsmoothed','pup_norm_70','pup_norm_100','aligned_x_position',...
+    'aligned_y_position','blockTransitions');
 
 %% Optional K-means analysis
 % Use whichever pupil variable you prefer for you data, however it should
@@ -333,6 +335,9 @@ if strcmp('y',dilcon)
         'AVG_cMagnitude','new_Cpts','new_Dpts','ff','-append');
 end
 
+%% Optional dilation - constrcition event detection (Noelle preferred criteria)
 
+[dilation_starts_final]=analysis.dil_con_events_no_constraints_v3(pup_norm_70,blockTransitions);
+ save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\', num2str(date),'_proc.mat'),'dilation_start_final');
 
     
