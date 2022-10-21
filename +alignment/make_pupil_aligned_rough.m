@@ -1,55 +1,45 @@
 function  [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
+        aligned_pupil_smoothed70,aligned_pupil_smoothed100,...
         aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
-        pup_norm_10,pup_norm_30] = make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder)
+        pup_norm_10,pup_norm_30,pup_norm_70,pup_norm_100] = make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder)
 
-% Horizontally concatenates blocks
-temp_pupil_full = []; %concatenated pupil trace (all blocks), raw
-temp_pupil_smoothed_30 = []; %concatenated pupil trace, smoothed by median over 30 timeframes
-temp_pupil_smoothed_10 = []; %concatenated pupil trace, smoothed by median over 10 timeframes
-temp_xpos = [];
-temp_ypos = [];
+%% get total number of frames per tsreies
+[frames_per_tseries]=alignment.findframes_nf(tseriesBaseFolder);
+
+%% stretch each individual tseries to length of imaging frames
+aligned_pupil_unsmoothed =[];
+aligned_y_position =[];
+aligned_x_position =[];
+
 for i=1:length(pupil_struct)
-    temp_pupil_full = [temp_pupil_full pupil_struct{i}.area.corrected_areas]; %change made from pupil_cat_stretched to pupil_cat_raw_smoothed_cut NF 5/3)
-    temp_pupil_smoothed_30 = [temp_pupil_smoothed_30 pupil_struct{i}.area.smoothed_30_timeframes];
-    temp_pupil_smoothed_10 = [temp_pupil_smoothed_10 pupil_struct{i}.area.smoothed_10_timeframes];
-    temp_xpos = [temp_xpos pupil_struct{i}.center_position.center_column];
-    temp_ypos = [temp_ypos pupil_struct{i}.center_position.center_row];
+    pupil_block = imresize(pupil_struct{1,i}.area.corrected_areas,[1,frames_per_tseries(i)]);
+    ypos_block = imresize(pupil_struct{1,i}.center_position.center_column,[1,frames_per_tseries(i)]);
+    xpos_block = imresize(pupil_struct{1,i}.center_position.center_row,[1,frames_per_tseries(i)]);
+    aligned_pupil_unsmoothed = [aligned_pupil_unsmoothed pupil_block];
+    aligned_y_position = [aligned_y_position ypos_block];
+    aligned_x_position = [aligned_x_position xpos_block];
 end
 
 
-
-%%CALL FUNCTION TO ALIGN PUPIL WITH GALVO 
-[aligned_pupil_unsmoothed,framesperblock] = alignment.make_pupil_aligned_tseries(tseriesBaseFolder,temp_pupil_full);%uses t-series as opposed to wavesurfer to get 2p frames - since not synching signal this is easier than going through wavesurfer
-aligned_pupil_smoothed10=imresize(temp_pupil_smoothed_10,[1,length(aligned_pupil_unsmoothed)]);
-aligned_pupil_smoothed30=imresize(temp_pupil_smoothed_30,[1,length(aligned_pupil_unsmoothed)]);
-aligned_x_position = imresize(temp_xpos,[1,length(aligned_pupil_unsmoothed)]);
-aligned_y_position = imresize(temp_ypos,[1,length(aligned_pupil_unsmoothed)]);
+aligned_pupil_smoothed10=utils.smooth_median(aligned_pupil_unsmoothed,10,'gaussian','median');
+aligned_pupil_smoothed30= utils.smooth_median(aligned_pupil_unsmoothed,30,'gaussian','median');
+aligned_pupil_smoothed100= utils.smooth_median(aligned_pupil_unsmoothed,100,'gaussian','median');
+aligned_pupil_smoothed70= utils.smooth_median(aligned_pupil_unsmoothed,70,'gaussian','median');
 
 
-if length(find(isnan(aligned_pupil_smoothed30)))>0
-    nanx = isnan(aligned_pupil_smoothed30);
-    t = 1:numel(aligned_pupil_smoothed30);
-    aligned_pupil_smoothed30(nanx) = interp1(t(~nanx),aligned_pupil_smoothed30(~nanx), t(nanx));
-    aligned_pupil_smoothed10(nanx) = interp1(t(~nanx),aligned_pupil_smoothed10(~nanx), t(nanx));
-    aligned_pupil_unsmoothed(nanx) = interp1(t(~nanx),aligned_pupil_unsmoothed_10(~nanx), t(nanx));
-end
-    
-
-%NORMALIZE PUPIL TO COMPARE ACROSS MICE AND DAYS 
-%m = mean(aligned_pupil_smoothed_30);
 pup_norm_30 =(aligned_pupil_smoothed30-mean(aligned_pupil_smoothed30))/mean(aligned_pupil_smoothed30);
 pup_norm_10 =(aligned_pupil_smoothed10-mean(aligned_pupil_smoothed10))/mean(aligned_pupil_smoothed10);
 pup_norm_unsmoothed =(aligned_pupil_unsmoothed-mean(aligned_pupil_unsmoothed))/mean(aligned_pupil_unsmoothed);
+pup_norm_100 =(aligned_pupil_smoothed100-mean(aligned_pupil_smoothed100))/mean(aligned_pupil_smoothed100);
+pup_norm_70 =(aligned_pupil_smoothed70-mean(aligned_pupil_smoothed70))/mean(aligned_pupil_smoothed70);
 
-
-% get index of block transitions 
+%% identify on which frames the tseries inferaces are     
 blockTransitions = [];
-     frames=0;
-    for i=1:length(framesperblock)
-        frames = frames+framesperblock(1,i);
-     blockTransitions(i) = frames;
-    end
-    
+frames = 0;
+for b=1:length(frames_per_tseries)
+    frames= frames+frames_per_tseries(b);
+    blockTransitions(b)=frames;
+end
 
 
 
