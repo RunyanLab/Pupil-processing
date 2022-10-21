@@ -196,7 +196,6 @@ for block =blocks
     pause;
 
 
-    the_areas_compare = (the_radii.^2).*pi;
     pupil.center_position.center_column = center_column_cut;
     pupil.center_position.center_row = center_row_cut;
     pupil.area.corrected_areas=corrected_areas;
