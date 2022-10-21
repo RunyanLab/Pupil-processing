@@ -7,7 +7,7 @@ clear pupil dilation_starts discrete_pup pup_norm_10 pup_norm_30 pup_norm_unsmoo
 sampling_rate_in_hz = 10;
 
 
-cd('\\runyan-fs-01\runyan3\Noelle\Pupil\Noelle Pupil\gc700\20220809_reproc\20220809')
+cd('\\runyan-fs-01\runyan3\Noelle\Pupil\Noelle Pupil\gc700\20220823')
 z=dir('*.mat');
 for i = 1:size(z,1)
     load(z(i).name)
@@ -119,12 +119,12 @@ end
 
 
 %%
-frames_per_tseries = alignment.findframes_nf('\\runyan-fs-01\runyan3\Noelle\2P\2P LC\gc700\gc700_20220809\');
+frames_per_tseries = alignment.findframes_nf('\\runyan-fs-01\runyan3\Noelle\2P\2P LC\dv100\dv100_20210901\');
 
 pupil_all_blocks = [];
 pupil_all_blocks_uncorrected =[];
 
-for i=1:size(z,1)
+for i=1:length(pupil_struct)
     pupil_block = imresize(pupil_struct{1,i}.area.corrected_areas,[1,frames_per_tseries(i)]);
     pupil_uncorrected_block = imresize(pupil_struct{1,i}.area.uncorrected_areas,[1,frames_per_tseries(i)]);
 
@@ -137,12 +137,17 @@ end
 aligned_pupil_unsmoothed = pupil_all_blocks;
 aligned_pupil_smoothed10=utils.smooth_median(aligned_pupil_unsmoothed,10,'gaussian','median');
 aligned_pupil_smoothed30= utils.smooth_median(aligned_pupil_unsmoothed,30,'gaussian','median');
+aligned_pupil_smoothed100= utils.smooth_median(aligned_pupil_unsmoothed,100,'gaussian','median');
+aligned_pupil_smoothed70= utils.smooth_median(aligned_pupil_unsmoothed,70,'gaussian','median');
 
 pup_norm_30 =(aligned_pupil_smoothed30-mean(aligned_pupil_smoothed30))/mean(aligned_pupil_smoothed30);
 pup_norm_10 =(aligned_pupil_smoothed10-mean(aligned_pupil_smoothed10))/mean(aligned_pupil_smoothed10);
 pup_norm_unsmoothed =(aligned_pupil_unsmoothed-mean(aligned_pupil_unsmoothed))/mean(aligned_pupil_unsmoothed);
+pup_norm_100 =(aligned_pupil_smoothed100-mean(aligned_pupil_smoothed100))/mean(aligned_pupil_smoothed100);
+pup_norm_70 =(aligned_pupil_smoothed70-mean(aligned_pupil_smoothed70))/mean(aligned_pupil_smoothed70);
 
-
+figure(100);clf;
+plot(aligned_pupil_unsmoothed)
 
 %%
 %post-processing changes to artifact detection 
@@ -196,7 +201,6 @@ plot(aligned_pupil_compare)
 plot(corrected_aligned_pupil_unsmoothed)
 
 
-
 aligned_pupil_unsmoothed=corrected_aligned_pupil_unsmoothed;
 aligned_pupil_smoothed10=utils.smooth_median(aligned_pupil_unsmoothed,10,'gaussian','median');
 aligned_pupil_smoothed30= utils.smooth_median(aligned_pupil_unsmoothed,30,'gaussian','median');
@@ -212,16 +216,32 @@ pup_norm_70 =(aligned_pupil_smoothed70-mean(aligned_pupil_smoothed70))/mean(alig
 
 
 %% get the dilation points 
+
+blockTransitions = [];
+frames = 0;
+for b=1:length(frames_per_tseries)
+    frames= frames+frames_per_tseries(b);
+    blockTransitions(b)=frames;
+end
+
+
+
 pupil = pup_norm_70;
 [dilation_starts_final]=analysis.dil_con_events_no_constraints_v3(pupil,blockTransitions);
 
-save('20220809_proc_final', 'dilation_starts_final','pup_norm_unsmoothed',...
-    'pup_norm_10','pup_norm_30','pup_norm_70','pup_norm_100','aligned_pupil_unsmoothed',...
-    'aligned_pupil_smoothed10','aligned_pupil_smoothed30','aligned_pupil_smoothed70',...
-    'aligned_pupil_smoothed100','blockTransitions');
+cd('\\runyan-fs-01\runyan3\Noelle\Pupil\Noelle Pupil\processed\dv100\20210901\')
+
+% save('20220823_proc_final', 'dilation_starts_final','pup_norm_unsmoothed',...
+%     'pup_norm_10','pup_norm_30','pup_norm_70','pup_norm_100','aligned_pupil_unsmoothed',...
+%     'aligned_pupil_smoothed10','aligned_pupil_smoothed30','aligned_pupil_smoothed70',...
+%     'aligned_pupil_smoothed100','blockTransitions');
 
         
 
+save('20210901_proc_final','pup_norm_unsmoothed',...
+    'pup_norm_10','pup_norm_30','pup_norm_70','pup_norm_100','aligned_pupil_unsmoothed',...
+    'aligned_pupil_smoothed10','aligned_pupil_smoothed30','aligned_pupil_smoothed70',...
+    'aligned_pupil_smoothed100','blockTransitions');
 
 
 

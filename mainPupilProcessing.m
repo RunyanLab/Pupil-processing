@@ -31,31 +31,34 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 % of code, may need to be changed across datasets if you notice differences
 % in lightblocking,camera angle, focus, etc.
 
-rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
+rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\bad_proc\reproc\'); 
 %acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
 tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'_',num2str(date),'\');
 saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
 
-d = dir(strcat(rawDataFolder,'\MATLAB_*.avi'));
-    cd(rawDataFolder);
+cd(rawDataFolder);
+
+d=dir('*.avi');
     
 blocks = 1:size(d,1); %each movie within a imaging session date is considered a separate block 
 
 %% Establish eye ROI and corneal reflections
 
-exp_obj = VideoReader(strcat('MATLAB_000',num2str(blocks(1)),'.avi'));
+exp_obj = VideoReader(d(1).name);
 the_example_image = read(exp_obj,round((exp_obj.NumberOfFrames)/2));
 rows = size(the_example_image,1);
 columns = size(the_example_image,2);
+
 figure()
 imshow(the_example_image)
+title('Draw Eye ROI')
 hold on 
 eye = drawellipse;
 pause;
 eyeMask = poly2mask(eye.Vertices(:,1), eye.Vertices(:,2) , rows, columns);
 
-
-cornealReflection_0 = drawellipse;
+title('Draw Corneal Reflection')
+cornealReflection_0 = drawellipse('Color','r');
 pause
 cornMask = poly2mask(cornealReflection_0.Vertices(:,1), cornealReflection_0.Vertices(:,2) , rows, columns);
 moreCR = input('Would you like to input another corneal reflection? 0/1 \n');
@@ -63,7 +66,7 @@ num = 0;
 additional_cornMask =[];
 while moreCR ==1
     num=num+1;
-   additional_cornealReflection = drawellipse;
+   additional_cornealReflection = drawellipse('Color','r');
    pause
    additional_cornMask{num} = poly2mask(additional_cornealReflection.Vertices(:,1), additional_cornealReflection.Vertices(:,2) , rows, columns);
    moreCR = input('Would you like to input another corneal reflection? 0/1 \n');
@@ -77,13 +80,7 @@ end
 % variables pertaining to each block 
 
 for block =blocks
-   
-    if block<10
-        obj = VideoReader(strcat('MATLAB_000',num2str(block),'.avi')); %reads video file properites
-    else
-        obj = VideoReader(strcat('MATLAB_00',num2str(block),'.avi'));
-    end
-    
+    obj=VideoReader(d(block).name); 
     NumberOfFrames = obj.NumberOfFrames;
 
     
@@ -150,7 +147,7 @@ for block =blocks
       clf;
       imshow(the_image)
       viscircles(z',r)
-      pause(.01)
+      pause(.001)
       
       raw_radii = [raw_radii radius];
       area = (radius^2)*pi;
