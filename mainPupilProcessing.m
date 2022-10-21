@@ -157,37 +157,10 @@ for block =blocks
     end
     
     % manipulations on the raw trace of current block - chopping to laser
-    raw_radii(raw_radii<10)=0;
-    first_index = find(raw_radii,1,'first'); %2p acquisition onset
-    last_index = find(raw_radii,1,'last'); %2p offset
-
-    figure(1);clf
-    imshow(read(obj,first_index))
-    title(strcat('Frame #',num2str(first_index)))
-    correct_start=input('Does this look like the correct start frame? 1/0');
-
-    if correct_start==0
-        start=input('What is the correct galvo start frame?');
-        first_index = start;
-    end
-
-
-    figure(1);clf
-    imshow(read(obj,last_index))
-    title(strcat('Frame #',num2str(first_index)))
-    correct_end=input('Does this look like the correct end frame? 1/0');
-
-    if correct_end==0
-        last=input('What is the correct galvo end frame?');
-        last_index = last;
-    end
-
-
-    the_radii_cut = raw_radii(first_index:last_index);
-    center_row_cut = center_row(first_index:last_index);
-    center_column_cut = center_column(first_index:last_index);
+    [the_radii_cut,center_row_cut,center_column_cut]=alignment.chop_to_laser(raw_radii);
     
-    %converting pix^2 to mm^2
+    
+
        %Adjust conversion factor according to camera and settings: 
     %Camera on 2P investigator:
         %1024 x 1280 pix res --> conversion factor = 0.00469426267
@@ -213,53 +186,6 @@ for block =blocks
     
     %eliminating blinks
     blinks_data_positions = processing.noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold);
-       % if isempty(blinks_data_positions{2})==1
-        %    blinks_data_positions(2) =[];
-        %end
-        if isempty(blinks_data_positions)
-            fprintf('No blinks \n')
-        else
-            for i = 1:length(blinks_data_positions)
-                the_areas(blinks_data_positions{1,i}) = NaN;
-            end
-            for i = 2:length(blinks_data_positions)
-                if blinks_data_positions{1,i}(1)-blinks_data_positions{1,i-1}(end)<=10
-                    the_areas(blinks_data_positions{1,i-1}(end):blinks_data_positions{1,i}(1)) = NaN;
-                end
-            end
-            if isnan(the_areas(1,1))==1
-                fr_replacement_ind=find(isnan(the_areas)==0,1,'first');
-                fr_replacement_val=the_areas(fr_replacement_ind);
-                fr_nan_inds = find(isnan(the_areas),fr_replacement_ind-1,'first');
-                the_areas(fr_nan_inds)=fr_replacement_val;
-            end
-            if isnan(the_areas(1,end))==1
-                lt_replacement_ind=find(isnan(the_areas)==0,1,'last');
-                lt_replacement_val=the_areas(lt_replacement_ind);
-                lt_nan_inds = find(isnan(the_areas),length(the_areas)-lt_replacement_ind,'last');
-                the_areas(lt_nan_inds)=lt_replacement_val;
-            end
-        end
-        
-        %eliminate measurements outside of physiologically possible range
-        %the_areas(the_areas >5) = NaN; 
-        %the_areas(the_areas<.05) = NaN;
-        the_areas(the_areas ==0)=NaN;
-
-    %interpolate across eliminated artifacts
-    x = 1:length(the_areas);
-    y = the_areas;
-    xi = x(find(~isnan(y)));
-    yi = y(find(~isnan(y)));
-
-    corrected_areas = interp1(xi,yi,x);
-
-    blink_inds=find(isnan(the_areas)==1); 
-
-
-
-    pupil_smoothed10=utils.smooth_median(corrected_areas,10,'gaussian','median');
-    pupil_smoothed30=utils.smooth_median(corrected_areas,30,'gaussian','median');
 
 
     figure(1)
@@ -275,8 +201,6 @@ for block =blocks
     pupil.center_position.center_row = center_row_cut;
     pupil.area.corrected_areas=corrected_areas;
     pupil.area.uncorrected_areas = the_areas_compare;
-    pupil.area.smoothed_30_timeframes = pupil_smoothed30;
-    pupil.area.smoothed_10_timeframes = pupil_smoothed10;
     pupil.radii.uncut_uncorrected_radii =  raw_radii;
     pupil.radii.cut_uncorrected_radii = the_radii;
     pupil.blink = blink_inds;

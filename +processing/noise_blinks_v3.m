@@ -1,4 +1,4 @@
-function blinks_data_positions = noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold)
+function [blinks_data_positions,blink_inds,corrected_areas] = noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold)
 %blinks_data_positions=[];
     sampling_interval     = round(1000/sampling_rate_in_hz); % compute the sampling time interval in milliseconds.
     gap_interval          = 100;   % set the interval between two sets that appear consecutively for concatenation.
@@ -66,4 +66,44 @@ end
     
     blinks_data_positions = blinks_data_positions(~cellfun('isempty',blinks_data_positions));
     
+%% making position in area vector NaN where a blink occurred then interpolate across it
+if isempty(blinks_data_positions)
+    fprintf('No blinks \n')
+else
+    for i = 1:length(blinks_data_positions)
+        the_areas(blinks_data_positions{1,i}) = NaN;
+    end
+    for i = 2:length(blinks_data_positions)
+        if blinks_data_positions{1,i}(1)-blinks_data_positions{1,i-1}(end)<=10
+            the_areas(blinks_data_positions{1,i-1}(end):blinks_data_positions{1,i}(1)) = NaN;
+        end
+    end
+    if isnan(the_areas(1,1))==1
+        fr_replacement_ind=find(isnan(the_areas)==0,1,'first');
+        fr_replacement_val=the_areas(fr_replacement_ind);
+        fr_nan_inds = find(isnan(the_areas),fr_replacement_ind-1,'first');
+        the_areas(fr_nan_inds)=fr_replacement_val;
+    end
+    if isnan(the_areas(1,end))==1
+        lt_replacement_ind=find(isnan(the_areas)==0,1,'last');
+        lt_replacement_val=the_areas(lt_replacement_ind);
+        lt_nan_inds = find(isnan(the_areas),length(the_areas)-lt_replacement_ind,'last');
+        the_areas(lt_nan_inds)=lt_replacement_val;
+    end
 end
+
+%eliminate measurements outside of physiologically possible range
+%the_areas(the_areas >5) = NaN; 
+%the_areas(the_areas<.05) = NaN;
+the_areas(the_areas ==0)=NaN;
+
+%interpolate across eliminated artifacts
+x = 1:length(the_areas);
+y = the_areas;
+xi = x(find(~isnan(y)));
+yi = y(find(~isnan(y)));
+
+corrected_areas = interp1(xi,yi,x);
+
+blink_inds=find(isnan(the_areas)==1); 
+
