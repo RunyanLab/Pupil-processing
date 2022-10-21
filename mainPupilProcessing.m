@@ -122,38 +122,31 @@ for block =blocks
 
     
         x=processing.getROIcoordinates(orientation,x,center_row,center_column,cnt);    
+        try
+            [z, r, residual] = processing.fitcircle_mcc(x,'linear');
+        catch ME
+            z = [];
+            r = [];
+        end
+        %how to handle blank frames
+        if isempty(r)
+            radius = 0;
+            center = zeros(2,1);
+        else
+            %[val,idx] = min(abs(raw_radii(cnt-1)-r));
+            radius = r;
+            z([1 2]) = z([2 1]);
+            center = z;
+        end
         
-      
-      try
-          [z, r, residual] = processing.fitcircle_mcc(x,'linear');
-      catch ME
-          z = [];
-          r = [];
-      end
-      
-
-      %how to handle blank frames
-      if isempty(r)
-          radius = 0;
-          center = zeros(2,1);
-      else
-          %[val,idx] = min(abs(raw_radii(cnt-1)-r));
-          radius = r;
-          z([1 2]) = z([2 1]);
-          center = z;
-      end
-      
-      figure(1)
-      clf;
-      imshow(the_image)
-      viscircles(z',r)
-      pause(.001)
-      
-      raw_radii = [raw_radii radius];
-      area = (radius^2)*pi;
-      the_areas = [the_areas area];
-      center_row = [center_row center(2,1)];
-      center_column = [center_column center(1,1)];
+        figure(1);clf;
+        imshow(the_image)
+        viscircles(z',r)
+        pause(.001)
+        
+        raw_radii = [raw_radii radius];
+        center_row = [center_row center(2,1)];
+        center_column = [center_column center(1,1)];
     end
     
     % manipulations on the raw trace of current block - chopping to laser
@@ -215,6 +208,7 @@ for block =blocks
     pupil_struct{block} = pupil;    
 
 end
+
 save('pupil_struct','pupil_struct');
 
 keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct tseriesBaseFolder eyeMask cornMask additional_conMask ;
