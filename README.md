@@ -20,19 +20,17 @@ acqFolder: The path where your wavesurfer/molecular devices files for dataset ar
 tseriesBaseFolder: The path where your tseries .tiff files for dataset are saved (this is only relevant if performing rouhg alignment of pupil to neural data)
 saveBaseFolder: The location you would like your fully aligned output file to be saved
 
-You may also wish to exclude some rows/columns of the frame matrix from pupil detection, if there are areas of the frame that are as bright as the pupil, you may choose to eliminate rows/columns that the pupil can never appear within so that these objects arent mistakenly identified as pupil. The code has a safeguard against this on a frame by frame basis by comparing the center position of the pupil identified in the last frame and selecting the object with the nearest position on the current frame, however if there are multiple objects the same brightness as pupil on the very first frame of the movie, the code may choose incorrectly, so implementing some spatial restriction for where the pupil object may appear will ensure accurate idenfication across frames.
-To edit this, see lines 91 through 94 
+Once all paths have been properly edited to suit your data, you are ready to run the code.
 
-Once all paths have been properly edited to suit your data, you may run code by typing 'mainPupilProcessing' or by hitting the RUN button in the Editing toolbar
 
 ### Running the code
 After hitting run, in the command line you will be prompted to input the following:
 
-Mouse ID: The name of the mouse exactly as it appears in your paths 
+Mouse ID: The name of the mouse as string exactly as it appears in your paths 
 
 Date: Date of imaging session, exactly as it appears in your paths
 
-Frame rate: Sampling rate of your pupil camera
+Sampling rate: Sampling rate of your pupil camera in hertz
 
 Threshold: Threshold is the level used to generate BW pixel image. This code will turn each frame of your movie into a binary matrix of 0s and 1s related to each pixel's intesesity, and the assignment of 0 or 1 to each pixel is detemined by the set threshold value. We want pixels part of the pupil ROI to be set to 1 and all other pixels to be set to 0. So in simpler terms, the threshold is the unique value set to dictate which pixels will be included as part of the pupil ROI or excluded. 
                     Pixels with luminence > threshold value are set to 1 (white)
@@ -44,6 +42,8 @@ Threshold: Threshold is the level used to generate BW pixel image. This code wil
 
 
 Orientation:The orienation of the camera. If the camer is upright and pupil displays in natural orienation set this value to '0' (as it is on 2p+), if camera is rotated 90 degrees and the pupil displays rotated from its natrual orientation, set this value to '90'( as it is on 2P investigator). This is important because a circle is fit to the pupil by using only the 20% rightmost pixels and 20% leftmost pixels - this produces an accurately fit cirlce to frames where the mouse's eye is partially close and the eyelid covers top and bottom regions of the pupil (insert an image here for ease of understanding)
+
+Rig: The rig the pupil movies were taken on, since cameras differ this will help with the conversion from pixels to microns
 
 Unit: The units in which pupil area output will be given. Inputting 'm' will convert output to mm^2 (this is recommended if data was collected using investigator rig, coversion has been verified for this camera). Input of 'p' will keep the output in pix^2 (this is recommened if data was collected using 2p+, at the moment there is not a consistent conversion factor verified for this camera due to its adjustable zoom).
 
