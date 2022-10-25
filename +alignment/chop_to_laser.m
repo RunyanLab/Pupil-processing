@@ -1,4 +1,4 @@
-function [the_radii_cut,center_row_cut, center_column_cut]=chop_to_laser(raw_radii)
+function [the_radii_cut,center_row_cut, center_column_cut,first_index,last_index]=chop_to_laser(raw_radii,obj,center_column, center_row)
 
 raw_radii(raw_radii<10)=0;
 first_index = find(raw_radii,1,'first'); %2p acquisition onset
@@ -18,7 +18,7 @@ end
 
 figure(1);clf
 imshow(read(obj,last_index))
-title(strcat('Frame #',num2str(first_index)))
+title(strcat('Frame #',num2str(last_index)))
 correct_end=input('Does this look like the correct end frame? 1/0');
 
 if correct_end==0

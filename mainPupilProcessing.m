@@ -31,7 +31,7 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 % of code, may need to be changed across datasets if you notice differences
 % in lightblocking,camera angle, focus, etc.
 
-rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\bad_proc\reproc\'); 
+rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
 %acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
 tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'_',num2str(date),'\');
 saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
@@ -150,7 +150,7 @@ for block =blocks
     end
     
     % manipulations on the raw trace of current block - chopping to laser
-    [the_radii_cut,center_row_cut,center_column_cut]=alignment.chop_to_laser(raw_radii);
+    [the_radii_cut,center_row_cut,center_column_cut,first_index,last_index]=alignment.chop_to_laser(raw_radii,obj,center_row,center_column);
     
     
 
@@ -178,7 +178,7 @@ for block =blocks
     end
     
     %eliminating blinks
-    blinks_data_positions = processing.noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold);
+    [blinks_data_positions,blink_inds,corrected_areas] = processing.noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold);
 
 
     figure(1)
