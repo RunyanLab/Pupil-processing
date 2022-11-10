@@ -64,7 +64,7 @@ cornMask = poly2mask(cornealReflection.Vertices(:,1), cornealReflection.Vertices
 % trace, save individual files for each block and a structure containing
 % variables pertaining to each block 
 
-for block =2
+for block =blocks
   
     obj = VideoReader(d(block).name); %reads video file properites
 
@@ -230,14 +230,14 @@ for block =2
 
 end
 
-keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct eyeMask cornMask d;
+keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pupil_struct eyeMask cornMask d behaviorFolder;
 
 %% Roughly align pupil with first virmen iteration
 
 %loading the behavior files, these files must be separately aligned by the
 %start frame
-acq{1}=load(strcat(behaviorFolder,'\STGF-1-00_221007'));
-acq{2}=load(strcat(behaviorFolder,'\STGF-1-00_221007_1'));
+acq{1}=load(strcat(behaviorFolder,'\STGF-1-00_221020'));
+acq{2}=load(strcat(behaviorFolder,'\STGF-1-00_221020_1'));
 
 
 for block = 1:2
@@ -246,9 +246,9 @@ for block = 1:2
     virm_it_times =[];
     %convert the data matrix time points for each virmen iteration into ms 
     for i = 1:length(virm_it)
-        virm_temp= strcat('1:',datestr(virm_it(i),'MM:SS.FFF'));
-        [~,~,~,~,MN,S] = datevec(virm_temp);
-        virm_it_times = [virm_it_times MN*60000+S*1000];
+        virm_temp= strcat(datestr(virm_it(i),'HH:MM:SS.FFF'));
+        [~,~,~,H,MN,S] = datevec(virm_temp);
+        virm_it_times = [virm_it_times  H*3.6e+6+MN*60000+S*1000];
     end
     
     %load pupil size vector for the current block 
@@ -272,9 +272,11 @@ for block = 1:2
         pupil_in_virm_units =[pupil_in_virm_units closest_frame];
     end
 
+
    %set each virmen iteration to the pupil size at the corresponding pupil
    %frame
     pupil_aligned_temp=temp_pup(pupil_in_virm_units);
+
 
     if block ==1
         pupil_aligned{1}=pupil_aligned_temp;
@@ -282,19 +284,56 @@ for block = 1:2
         pupil_aligned{2}=pupil_aligned_temp;
     end
 
+    %load pupil x position vector for the current block
+    temp_xpup=pupil_struct{1,block}.center_position.center_column;
 
+    xpup_aligned_temp=temp_xpup(pupil_in_virm_units);
+
+
+    if block ==1
+        xpup_aligned{1}=xpup_aligned_temp;
+    elseif block ==2
+        xpup_aligned{2}=xpup_aligned_temp;
+    end
 
 end
 
+% find iterations at ~300 units in Y
+for tr = 1:length(dataCell)
+    start_time=dataCell{tr}.time.start;
+    end_time=dataCell{tr}.time.stop;
+    [y,start_it]=min(abs(start_time-acq{1,1}.data(1,:)));
+    [y,end_it]=min(abs(end_time-acq{1,1}.data(1,:)));
+    [y,i]=min(abs(acq{1,1}.data(3,start_it:end_it)-300));
+    it_300(tr)=i;
+    cor_it_300=it_300(dataCell)
+end
 
+hold off
+figure
+for tr = 1:length(dataCell)
+    start_time=dataCell{tr}.time.start;
+    end_time=dataCell{tr}.time.stop;
+    [y,start_it]=min(abs(start_time-acq{1,1}.data(1,:)));
+    [y,end_it]=min(abs(end_time-acq{1,1}.data(1,:)));
+%     if dataCell{1,tr}.maze.leftTrial == 1
+%         plot(acq{1}.data(3,start_it:end_it),normalize(xpup_aligned{1}(1,start_it:end_it),'range'),'b-')
+%     else
+%         plot(acq{1}.data(3,start_it:end_it),normalize(xpup_aligned{1}(1,start_it:end_it),'range'),'r-')
+%     end
+ if dataCell{1,tr}.maze.leftTrial == 1
+        plot(acq{1}.data(3,start_it:end_it),xpup_aligned{1}(1,start_it:end_it),'b-')
+    else
+        plot(acq{1}.data(3,start_it:end_it),xpup_aligned{1}(1,start_it:end_it),'r-')
+    end
+    hold on
+end
+ylabel('Pupil Position')
+xlabel('Y Position')
+hold off
 
-
-
-
-
-
-
-
+% for tr = 1:length(dataCell)
+%     plot(pupil_aligned{1}(it_300))
 
 
 % %% Aligning pupil trace concatenated across blocks to imaging data 
