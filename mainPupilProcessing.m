@@ -143,9 +143,12 @@ for block =blocks
       center_row = [center_row center(2,1)];
       center_column = [center_column center(1,1)];
     end
-    
-            the_radii = raw_radii.*1; %need to get conversion factor
-   
+
+            center_row_mm = center_row.*.005; %1mm = 200p
+            center_column_mm = center_column.*.005;
+
+            the_radii = raw_radii.*.005;
+
         the_areas = (the_radii.^2).*pi;
         the_areas_compare = (the_radii.^2).*pi;
         blink_threshold = 10000; %test blink threshold once conversion factor found
@@ -193,6 +196,7 @@ for block =blocks
 
     corrected_areas = interp1(xi,yi,x);
 
+
     blink_inds=find(isnan(the_areas)==1); 
 
 
@@ -210,8 +214,8 @@ for block =blocks
 
 
     the_areas_compare = (the_radii.^2).*pi;
-    pupil.center_position.center_column = center_column;
-    pupil.center_position.center_row = center_row;
+    pupil.center_position.center_column = center_column_mm;
+    pupil.center_position.center_row = center_row_mm;
     pupil.area.corrected_areas=corrected_areas;
     pupil.area.uncorrected_areas = the_areas_compare;
     pupil.area.smoothed_30_timeframes = pupil_smoothed30;
@@ -236,8 +240,8 @@ keep mouse blocks date align km dilcon rawDataFolder acqFolder saveBaseFolder pu
 
 %loading the behavior files, these files must be separately aligned by the
 %start frame
-acq{1}=load(strcat(behaviorFolder,'\STGF-1-00_221020'));
-acq{2}=load(strcat(behaviorFolder,'\STGF-1-00_221020_1'));
+acq{1}=load(strcat(behaviorFolder,'\STGF-1-00_221122'));
+acq{2}=load(strcat(behaviorFolder,'\STGF-1-00_221122_1'));
 
 
 for block = 1:2
@@ -297,20 +301,21 @@ for block = 1:2
     end
 
 end
-
-% find iterations at ~300 units in Y
-for tr = 1:length(dataCell)
-    start_time=dataCell{tr}.time.start;
-    end_time=dataCell{tr}.time.stop;
-    [y,start_it]=min(abs(start_time-acq{1,1}.data(1,:)));
-    [y,end_it]=min(abs(end_time-acq{1,1}.data(1,:)));
-    [y,i]=min(abs(acq{1,1}.data(3,start_it:end_it)-300));
-    it_300(tr)=i;
-    cor_it_300=it_300(dataCell)
-end
+%%
+% %find iterations at ~300 units in Y
+% for tr = 1:length(dataCell)
+%     start_time=dataCell{tr}.time.start;
+%     end_time=dataCell{tr}.time.stop;
+%     [y,start_it]=min(abs(start_time-acq{1,1}.data(1,:)));
+%     [y,end_it]=min(abs(end_time-acq{1,1}.data(1,:)));
+%     [y,i]=min(abs(acq{1,1}.data(3,start_it:end_it)-300));
+%     it_300(tr)=i;
+%     cor_it_300=it_300(dataCell)
+% end
 
 hold off
-figure
+
+figure(1)
 for tr = 1:length(dataCell)
     start_time=dataCell{tr}.time.start;
     end_time=dataCell{tr}.time.stop;
@@ -331,7 +336,36 @@ end
 ylabel('Pupil Position')
 xlabel('Y Position')
 hold off
-
+%%
+hold off
+%sort avg pupil sizes by condition
+figure(2)
+for tr = 1:length(dataCell)
+    start_time=dataCell{tr}.time.start;
+    end_time=dataCell{tr}.time.stop;
+    [y,start_it]=min(abs(start_time-acq{1,1}.data(1,:)));
+    [y,end_it]=min(abs(end_time-acq{1,1}.data(1,:)));
+%     [y,i]=min(abs(acq{1,1}.data(3,start_it:end_it)-500));
+%     it_500(tr)=i;
+%     cor_it_500=it_500(dataCell)
+%      if dataCell{1,tr}.result.correct == 1
+%     swarmchart(dataCell{1,tr}.maze.condition,pupil_aligned{1}(1,cor_it_500(tr)),300,"k");
+%      else
+%     swarmchart(dataCell{1,tr}.maze.condition,pupil_aligned{1}(1,cor_it_500(tr)),300,"*","r");
+%      end
+     if dataCell{1,tr}.result.correct == 1
+         swarmchart(dataCell{1,tr}.maze.condition,mean(pupil_aligned{1}(1,end_it:end_it+180)),150,"k"); %iti = 180 interations (minimum)
+         swarmchart(dataCell{1,tr}.maze.condition,mean(pupil_aligned{1}(1,end_it-180:end_it)),150,"b");
+     else
+         swarmchart(dataCell{1,tr}.maze.condition,mean(pupil_aligned{1}(1,end_it:end_it+180)),500,"*","k");
+         swarmchart(dataCell{1,tr}.maze.condition,mean(pupil_aligned{1}(1,end_it-180:end_it)),500,"*","r");
+     end
+    hold on
+end
+ylabel('Pupil Size (mm)')
+xlabel('Condition')
+hold off
+%%
 % for tr = 1:length(dataCell)
 %     plot(pupil_aligned{1}(it_300))
 
