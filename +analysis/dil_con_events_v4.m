@@ -11,7 +11,7 @@ end
 
 %[pks,locs] = findpeaks(pupil*-1,'MinPeakProminence',.1) ;
 
-[pks,locs,] = findpeaks(pupil,'MinPeakProminence',100) ;
+[pks,locs] = findpeaks(pupil,'MinPeakProminence',100) ;
 %[pks,locs]=findpeaks(pupil*-1);
 
 
