@@ -220,8 +220,9 @@ if strcmp('t',align)
         pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_tight(acqFolder,blocks,pupil_struct);
 else
     [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
+        aligned_pupil_smoothed70,aligned_pupil_smoothed100,...
         aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
-        pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder);
+        pup_norm_10,pup_norm_30,pup_norm_70,pup_norm_100]=alignment.make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder);
 end
 %cd(saveBaseFolder)
 mkdir([saveBaseFolder mouse '\' num2str(date)]);
