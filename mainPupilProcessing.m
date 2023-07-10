@@ -7,9 +7,24 @@
 
 %% Setup 
 % User inputs information about the current dataset
-mouse = input('Whats the mouse ID? Please input as string');
-date = input('Date?');
-sampling_rate_in_hz=input('What is the frame rate of the camera?');
+
+disp('Select the folder where unprocessed pupil movies are saved...');
+rawDataFolder = uigetdir;
+disp('Selected!')
+disp('Select the folder where tseries are saved...')
+tseriesBaseFolder = uigetdir;
+disp('Selected!')
+disp('Select the folder where you would like to save the output...')
+saveBaseFolder = uigetdir;
+disp('Selected!')
+
+cd(rawDataFolder)
+d=dir('*.avi');
+sampling_rate = VideoReader(d(1).name).FrameRate;
+% 
+% fig = uifigure;
+% cbx = uicheckbox(fig);
+
 threshold = input('Threshold?'); 
 orientation = input('What is the orientation of the camera? 0(normal)/90(rotated)');
 rig = input('What rig did you collect data using? inv/2p+ as string');
@@ -31,14 +46,9 @@ dilcon= input('Complete dilation/constriction event identificaton? Input y/n as 
 % of code, may need to be changed across datasets if you notice differences
 % in lightblocking,camera angle, focus, etc.
 
-rawDataFolder =strcat('\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\',mouse,'\',num2str(date),'\'); 
 %acqFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\wavesurfer\LC\',mouse,'_',num2str(date),'\burst'); %only need if doing tight alingment
-tseriesBaseFolder=strcat('\\runyan-fs-01\Runyan3\Noelle\2P\2P LC\',mouse,'_',num2str(date),'\');
-saveBaseFolder ='\\runyan-fs-01\Runyan3\Noelle\Pupil\Noelle Pupil\processed\'; %this is where final aligned files will be saved, not processed files for individual blocks, those will be saved in the base folder by default
 
-cd(rawDataFolder);
 
-d=dir('*.avi');
     
 blocks = 1:size(d,1); %each movie within a imaging session date is considered a separate block 
 
@@ -178,7 +188,7 @@ for block =blocks
     end
     
     %eliminating blinks
-    [blinks_data_positions,blink_inds,corrected_areas] = processing.noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold);
+    [blinks_data_positions,blink_inds,corrected_areas] = processing.noise_blinks_v3(the_areas,sampling_rate,blink_threshold);
 
 
     figure(1)
