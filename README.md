@@ -18,20 +18,13 @@ NOTE: This code has been tested in MATLAB 2019a and later. Older versions may be
 
 
 ### User input - processing parameters
-
-Blink Threshold = Boundary to exclude changes in the first derivative of the pupil trace that are likely full or partial occlusions of the pupil by the eyelid. Default =.1, works well for mm^2 values 
-
-Orientation = The orientation of the FOV, 0 if normal, 90 if rotated. This is important because a circle is fit to the pupil by using only the 20% rightmost pixels and 20% leftmost pixels - this produces an accurately fit cirlce to frames where the mouse's eye is partially close and the eyelid covers top and bottom regions of the pupil  
-
-Unit = mm^2 or pix^2, if choosing mm^2 you must input a conversion factor from pixels to mm
-
-Conversion = pixels to mm conversion factor (1 pix = ? mm)
-
-Alignment = The method for aligning pupil movies to all other simultaneous recordings (ie. 2P imaging, running signal, stimulus, etc). Select 'rough' to align based on count of tseries .tiff files by cutting pupil signal to frame of galvo shutter opening and closing and stretching/upsampling the signal to match this number. For recordings without wavesurfer recorded pupil camera signal this is the only option for alignment. Selecting 'tight' will align using the sync data (clampex or wavesurfer) files.
-
-
-
-Threshold: Threshold is the level used to generate BW pixel image. This code will turn each frame of your movie into a binary matrix of 0s and 1s related to each pixel's intesesity, and the assignment of 0 or 1 to each pixel is detemined by the set threshold value. We want pixels part of the pupil ROI to be set to 1 and all other pixels to be set to 0. So in simpler terms, the threshold is the unique value set to dictate which pixels will be included as part of the pupil ROI or excluded. 
+Processing Parameters 
+- Blink Threshold = Boundary to exclude changes in the first derivative of the pupil trace that are likely full or partial occlusions of the pupil by the eyelid. Default =.1, works well for mm^2 values 
+- Orientation = The orientation of the FOV, 0 if normal, 90 if rotated. This is important because a circle is fit to the pupil by using only the 20% rightmost pixels and 20% leftmost pixels - this produces an accurately fit cirlce to frames where the mouse's eye is partially close and the eyelid covers top and bottom regions of the pupil  
+- Unit = mm^2 or pix^2, if choosing mm^2 you must input a conversion factor from pixels to mm
+- Conversion = pixels to mm conversion factor (1 pix = ? mm)
+- Alignment = The method for aligning pupil movies to all other simultaneous recordings (ie. 2P imaging, running signal, stimulus, etc). Select 'rough' to align based on count of tseries .tiff files by cutting pupil signal to frame of galvo shutter opening and closing and stretching/upsampling the signal to match this number. For recordings without wavesurfer recorded pupil camera signal this is the only option for alignment. Selecting 'tight' will align using the sync data (clampex or wavesurfer) files.
+- Threshold: Threshold is the level used to generate BW pixel image. This code will turn each frame of your movie into a binary matrix of 0s and 1s related to each pixel's intesesity, and the assignment of 0 or 1 to each pixel is detemined by the set threshold value. We want pixels part of the pupil ROI to be set to 1 and all other pixels to be set to 0. So in simpler terms, the threshold is the unique value set to dictate which pixels will be included as part of the pupil ROI or excluded. 
                     Pixels with luminence > threshold value are set to 1 (white)
                     Pixels with luminance < threhsold value are set to 0 (black)
                     Therefore:
@@ -39,10 +32,10 @@ Threshold: Threshold is the level used to generate BW pixel image. This code wil
                     Lower thresold value --> more pixels get contained in pupil ROI
              You must test out different thresholds to find the value that works best for you data
 
+Elective Analyses
+- Kmeans cluster analysis: Check if you would like to run elective kmeans clustering analyses. This function will cluster the normalized pupil data into 3 clusters: high arousal, low arousal and transition state periods. Inputting 'y' will run this function and save all relevant variables into the file within saveBaseFolder. Inputting 'n' will skip running this function. Set first input of function to perferred aligned and normalized pupil output variable (pup_norm_unsmoothed,pup_norm_10 or pup_norm_30). If not change is made the function will use pup_norm_unsmoothed as default.
 
-Kmeans cluster analysis: Check if you would like to run elective kmeans clustering analyses. This function will cluster the normalized pupil data into 3 clusters: high arousal, low arousal and transition state periods. Inputting 'y' will run this function and save all relevant variables into the file within saveBaseFolder. Inputting 'n' will skip running this function. Set first input of function to perferred aligned and normalized pupil output variable (pup_norm_unsmoothed,pup_norm_10 or pup_norm_30). If not change is made the function will use pup_norm_unsmoothed as default.
-
-Dilaction/Constriction event analysis: Check if you would like to run elective detection of dilation and constriction events This function will . without constraint, constraints may be added to eliminate dilation/constriction events of small magnitudes or ones that occur within a larger event of interest. Inputting 'y' will run this function and save all relevant variables into the file within saveBaseFolder. Set first input of function to perferred aligned pupil output variable (normalized or not normalized)/ If no change to input is made the function will use pup_norm_unsmoothed as default. Inputting 'n' will skip running this function.
+- Dilaction/Constriction event analysis: Check if you would like to run elective detection of dilation and constriction events This function will . without constraint, constraints may be added to eliminate dilation/constriction events of small magnitudes or ones that occur within a larger event of interest. Inputting 'y' will run this function and save all relevant variables into the file within saveBaseFolder. Set first input of function to perferred aligned pupil output variable (normalized or not normalized)/ If no change to input is made the function will use pup_norm_unsmoothed as default. Inputting 'n' will skip running this function.
 
 When you are happy with your selection, press the "Run" buttion
 
