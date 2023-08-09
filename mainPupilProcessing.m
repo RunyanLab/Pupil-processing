@@ -33,10 +33,14 @@ blocks = 1:size(d,1); %each movie within a imaging session date is considered a 
 %% Establish processing parameters 
 
  [selectedThreshold,selectedBlink,selectedScope,selectedOrient,selectedUnit,...
-    selectedConversion,selectedAlign,selectedKmeans,selectedDilCon]...
+    selectedConversion,selectedAlign,selectedFace,selectedKmeans,selectedDilCon]...
     =processing.createSettingsGUI(the_example_image,cornMask,eyeMask,additional_cornMask);
 
-
+ %% Establish Face ROI 
+ if selectedFace
+     [faceMask] =  processing.drawFaceROI(the_example_image);
+     faceMatrix = [];
+ end
 %% Loop through all blocks
 % For each block this will read out each frame, identify pupil ROI, get
 % area meaurment for circle made, remove blinks and other artifacts from
@@ -53,11 +57,18 @@ for block =blocks
     raw_radii = [];
     center_row = [];
     center_column = [];
+    
 
     %Converts each frame to BW matrix based on threshold
     for cnt = 1:NumberOfFrames  
         the_image = read(obj,cnt);
         
+        if selectedFace
+            faceMatrix = [faceMatrix the_image(faceMask)]; %nPix in faceROI x nFrames
+        end
+
+
+        %compute the pupil 
         x=processing.createBWMatrix(the_image,selectedThreshold,eyeMask,cornMask,additional_cornMask);
 
         x=processing.getROIcoordinates(selectedOrient,x,center_row,center_column,cnt);    
@@ -141,6 +152,25 @@ for block =blocks
     pupil_struct{block} = pupil;    
 
 end
+% 
+% motionEnergy = abs(diff(faceMatrix,1,2));
+% 
+% U=[];
+% S=[];
+% V=[];
+% for bin = 1:500:size(faceMatrix,2)
+%    if bin+499<size(faceMatrix,2)
+%        %compute the SVD
+%         [U_b,S_b,V_b]=svd(double(faceMatrix(:,bin:bin+499)),'econ');
+%         U=cat(2,U,U_b); S =cat(2,S,S_b); V = cat(2,V,V_b);
+% 
+%    else 
+%        [U,S,V]=svd(double(faceMatrix(:,bin:size(faceMatrix,2))),'econ');
+%        U=cat(2,U,U_b); S =cat(2,S,S_b); V = cat(2,V,V_b);
+%    end
+% 
+% end
+
 
 save('pupil_struct','pupil_struct');
 

@@ -1,5 +1,5 @@
 function [selectedThreshold,selectedBlink,selectedScope,selectedOrient,selectedUnit,...
-    selectedConversion,selectedAlign,selectedKmeans,selectedDilCon]...
+    selectedConversion,selectedAlign,selectedFace,selectedKmeans,selectedDilCon]...
     = createSettingsGUI(the_example_image,cornMask,eyeMask,additional_cornMask)
 
 
@@ -11,6 +11,7 @@ selectedOrient = 0;
 selectedUnit = 'pix^2';
 selectedConversion = 1;
 selectedAlign = 'rough';
+selectedFace = 0;
 selectedKmeans = 0;
 selectedDilCon =0;
 
@@ -27,36 +28,40 @@ analysisLabel = uicontrol('Style','text','Position',[450,370,150,50],'String','E
 %blink threshold input 
 blinkLabel = uicontrol('Style','text','String','Blink Threshold:','Position',[30,340,150,20],'FontSize',9.5);
 blinkEdit = uicontrol('Style','edit','Position',[170,340,80,20],'Callback',@blinkCallbackFxn);
-
-% scope - select one 
-scopeLabel = uicontrol('Style','text','String','Scope/Rig:','Position',[30,310,150,20],'FontSize',9.5,'Callback',@scopesCallbackFxn);
-scopes = {'2P+','Investigator','Training rig'};
-scopeDrop = uicontrol('Style','popupmenu','Position',[170,280,100,50],'String',scopes,'Callback',@scopesCallbackFxn);
+% 
+% % scope - select one 
+% scopeLabel = uicontrol('Style','text','String','Scope/Rig:','Position',[30,310,150,20],'FontSize',9.5,'Callback',@scopesCallbackFxn);
+% scopes = {'2P+','Investigator','Training rig'};
+% scopeDrop = uicontrol('Style','popupmenu','Position',[170,280,100,50],'String',scopes,'Callback',@scopesCallbackFxn);
 
 
 % oritenation
-orientLabel = uicontrol('Style','text','String','Orientation:','Position',[30,280,150,20],'FontSize',9.5);
+orientLabel = uicontrol('Style','text','String','Orientation:','Position',[30,310,150,20],'FontSize',9.5);
 orients = {'0','90'};
-orientDrop = uicontrol('Style','popupmenu','Position',[170,280,50,20],'String',orients,'Callback',@orientCallbackFxn);
+orientDrop = uicontrol('Style','popupmenu','Position',[170,310,50,20],'String',orients,'Callback',@orientCallbackFxn);
 
 %unit 
-unitLabel = uicontrol('Style','text','String','Unit:','Position',[30,250,150,20],'FontSize',9.5);
+unitLabel = uicontrol('Style','text','String','Unit:','Position',[30,280,50,20],'FontSize',9.5);
 units = {'pix^2','mm^2'};
-unitDrop = uicontrol('Style','popupmenu','Position',[170,250,50,20],'String',units,'Callback',@unitCallbackFxn);
+unitDrop = uicontrol('Style','popupmenu','Position',[170,280,50,20],'String',units,'Callback',@unitCallbackFxn);
 
 
-conversionLabel = uicontrol('Style','text','String','Conversion Factor:','Position',[30,220,150,20],'FontSize',9.5);
-conversionEdit = uicontrol('Style','edit','Position',[170,220,80,20],'Callback',@conversionCallbackFxn);
+conversionLabel = uicontrol('Style','text','String','Conversion Factor:','Position',[30,250,150,20],'FontSize',9.5);
+conversionEdit = uicontrol('Style','edit','Position',[170,250,50,20],'Callback',@conversionCallbackFxn);
 
 %alignment
-alignLabel = uicontrol('Style','text','String','Alignment type:','Position',[30,190,150,20],'FontSize',9.5);
+alignLabel = uicontrol('Style','text','String','Alignment type:','Position',[30,220,150,20],'FontSize',9.5);
 align = {'rough','tight'};
-alignDrop = uicontrol('Style','popupmenu','Position',[170,190,100,20],'String',align,'Callback',@alignCallbackFxn);
+alignDrop = uicontrol('Style','popupmenu','Position',[170,220,100,20],'String',align,'Callback',@alignCallbackFxn);
+
+
 
 %threshold
-thresholdLabel = uicontrol('Style','text','Position',[50,130,200,20],'String','Set Threshold Value');
-threshold = uicontrol('Style','slider','Position',[50,90,200,20],'Min',0,'Max',1,'Value',.5,'Callback',@sliderCallback);
-sLabel = uicontrol('Style','text','Position',[50,110,200,20],'String',0.5);
+thresholdLabel = uicontrol('Style','text','Position',[50,190,200,20],'String','Set Threshold Value');
+threshold = uicontrol('Style','slider','Position',[50,150,200,20],'Min',0,'Max',1,'Value',.5,'Callback',@sliderCallback);
+sLabel = uicontrol('Style','text','Position',[50,170,200,20],'String',0.5);
+
+faceCheckBox = uicontrol('Style','checkbox','String','Compute face SVD?','Position',[30,100,150,20],'FontSize',9.5,'Callback',@faceCallbackFxn);
 
 % could also have a save parameters button which saves a file of all these
 % button properties so that it can be loaded on each dataset 
@@ -103,6 +108,11 @@ start = uicontrol('Style','pushbutton','String','Run','Position',[600,50,150,50]
     function conversionCallbackFxn(src,~)
         selectedConversion=src.Value;
     end
+%callback fxn for face 
+    function faceCallbackFxn(src,~)
+        selectedFace=src.Value;
+    end
+
 
 %callback fxn for kmeans 
     function kmeansCallbackFxn(src,~)
