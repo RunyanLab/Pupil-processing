@@ -29,7 +29,7 @@ aligned_pupil_smoothed70= utils.smooth_median(aligned_pupil_unsmoothed,70,'gauss
 
 pup_norm_30 =(aligned_pupil_smoothed30-mean(aligned_pupil_smoothed30))/mean(aligned_pupil_smoothed30);
 pup_norm_10 =(aligned_pupil_smoothed10-mean(aligned_pupil_smoothed10))/mean(aligned_pupil_smoothed10);
-pup_norm_unsmoothed =(aligned_pupil_unsmoothed-mean(aligned_pupil_unsmoothed))/mean(aligned_pupil_unsmoothed);
+pup_norm_unsmoothed =(aligned_pupil_unsmoothed-mean(aligned_pupil_unsmoothed,'omitnan'))/mean(aligned_pupil_unsmoothed,'omitnan');
 pup_norm_100 =(aligned_pupil_smoothed100-mean(aligned_pupil_smoothed100))/mean(aligned_pupil_smoothed100);
 pup_norm_70 =(aligned_pupil_smoothed70-mean(aligned_pupil_smoothed70))/mean(aligned_pupil_smoothed70);
 

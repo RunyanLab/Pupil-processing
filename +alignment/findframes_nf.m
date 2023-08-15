@@ -8,7 +8,7 @@ function [framesperblock]=findframes_nf(base_path_tseries)
         if contains(files(i).name,'TSeries')
             tifnum=0;
             blocks=blocks+1;
-            tifs=dir([base_path_tseries files(i).name]);
+            tifs=dir([base_path_tseries '\' files(i).name]);
             for n=1:length(tifs)
                 if contains(tifs(n).name,'Ch2')
                     tifnum=tifnum+1;

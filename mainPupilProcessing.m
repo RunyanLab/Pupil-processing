@@ -111,7 +111,7 @@ for block =blocks
     %Camera on 2P+:
         %1024 x 1280 pix res --> conversion factor = 0.01147684
         %512 x 640 pix res --> conversion factor = 0.02324933
-    if strcmp('mm^2', seletedUnit) 
+    if strcmp('mm^2', selectedUnit) 
         
         the_radii = the_radii_cut.*selectedConversion; 
     else
@@ -122,7 +122,7 @@ for block =blocks
     
     
     %eliminating blinks
-    [blinks_data_positions,blink_inds,corrected_areas] = processing.noise_blinks_v3(the_areas,sampling_rate,selecedBlink);
+    [blinks_data_positions,blink_inds,corrected_areas] = processing.noise_blinks_v3(the_areas,sampling_rate,selectedBlink);
 
 
     figure(1)
@@ -144,9 +144,9 @@ for block =blocks
     pupil.galvo_off = last_index;
 
     if block<10
-        save(strcat(mouse,'_000',num2str(block),'.mat'),'pupil');
+        save(strcat('file_000',num2str(block),'.mat'),'pupil');
     else
-        save(strcat(mouse,'_00',num2str(block),'.mat'),'pupil');
+        save(strcat('file_00',num2str(block),'.mat'),'pupil');
     end
     
     pupil_struct{block} = pupil;    
@@ -177,7 +177,7 @@ save('pupil_struct','pupil_struct');
 keep  blocks selectedAlign selectedKmeans selectedDilCon rawDataFolder acqFolder saveBaseFolder pupil_struct tseriesBaseFolder eyeMask cornMask additional_conMask ;
 
 %% Aligning pupil trace concatenated across blocks to imaging data 
-if strcmp('t',align)
+if strcmp('tough',selectedAlign)
     [aligned_pupil_unsmoothed,aligned_pupil_smoothed10,aligned_pupil_smoothed30,...
         aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
         pup_norm_10,pup_norm_30]=alignment.make_pupil_aligned_tight(acqFolder,blocks,pupil_struct);
