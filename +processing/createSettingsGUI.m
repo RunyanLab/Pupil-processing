@@ -6,7 +6,7 @@ function [selectedThreshold,selectedBlink,selectedScope,selectedOrient,selectedU
 %intialize the output variables 
 selectedThreshold = .5;
 selectedBlink = [];
-selectedScope = '2p+';
+selectedScope = 'Inv';
 selectedOrient = 0;
 selectedUnit = 'pix^2';
 selectedConversion = 1;
@@ -81,7 +81,7 @@ start = uicontrol('Style','pushbutton','String','Run','Position',[600,50,150,50]
 
 %callback fxn for blink
     function blinkCallbackFxn(src,~)
-        selectedBlink = get(src,'Value');
+        selectedBlink = str2num(src.String);
     end
 
 %callback fxn for orient 
@@ -106,8 +106,9 @@ start = uicontrol('Style','pushbutton','String','Run','Position',[600,50,150,50]
 
 %callback fxn for conversion factor 
     function conversionCallbackFxn(src,~)
-        selectedConversion=src.Value;
+        selectedConversion=str2num(src.String);%src.Value;
     end
+    
 %callback fxn for face 
     function faceCallbackFxn(src,~)
         selectedFace=src.Value;

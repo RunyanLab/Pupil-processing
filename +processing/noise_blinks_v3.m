@@ -1,4 +1,4 @@
-function [blinks_data_positions,blink_inds,corrected_areas] = noise_blinks_v3(the_areas,sampling_rate_in_hz,blink_threshold)
+function [blinks_data_positions,blink_inds,corrected_areas] = noise_blinks_v4(the_areas,sampling_rate_in_hz,blink_threshold)
 %blinks_data_positions=[];
     sampling_interval     = round(1000/sampling_rate_in_hz); % compute the sampling time interval in milliseconds.
     gap_interval          = 100;   % set the interval between two sets that appear consecutively for concatenation.

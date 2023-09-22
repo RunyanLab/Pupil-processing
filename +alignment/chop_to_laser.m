@@ -6,9 +6,20 @@ last_index = find(raw_radii,1,'last'); %2p offset
 
 
 figure(1);clf
-imshow(read(obj,first_index))
-title(strcat('Frame #',num2str(first_index)))
-correct_start=input('Does this look like the correct start frame? 1/0');
+% imshow(read(obj,first_index))
+% title(strcat('Frame #',num2str(first_index)))
+%figure(); 
+if first_index>=3
+    for i=1:3 % plot first index frame and the two frames before it
+        subplot(1,3,i);
+        imshow(read(obj,first_index-(i-1)));
+        title(strcat('Frame #',num2str(first_index-(i-1))));
+    end
+else
+    imshow(read(obj,first_index))
+    title(strcat('Frame #', num2str(first_index)));
+end
+correct_start=input(strcat('Does this frame',num2str(first_index),' look like the correct start frame? 1/0'));
 
 if correct_start==0
     start=input('What is the correct galvo start frame?');
@@ -17,9 +28,19 @@ end
 
 
 figure(1);clf
-imshow(read(obj,last_index))
-title(strcat('Frame #',num2str(last_index)))
-correct_end=input('Does this look like the correct end frame? 1/0');
+% imshow(read(obj,last_index))
+% title(strcat('Frame #',num2str(last_index)))
+if last_index<=(length(raw_radii)-3)
+    for i=1:3 % plot first index frame and the two frames before it
+        subplot(1,3,i);
+        imshow(read(obj,last_index+(i-1)));
+        title(strcat('Frame #',num2str(last_index+(i-1))));
+    end
+else
+    imshow(read(obj,last_index));
+    title(strcat('Frame #',num2str(last_index)));
+end
+correct_end=input(strcat('Does this frame',num2str(last_index),' look like the correct end frame? 1/0'));
 
 if correct_end==0
     last=input('What is the correct galvo end frame?');

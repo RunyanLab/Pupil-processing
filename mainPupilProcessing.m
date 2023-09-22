@@ -6,7 +6,6 @@
 
 %% Setup 
 % User inputs information about the current dataset
-
 disp('Select the folder where unprocessed pupil movies are saved...');
 rawDataFolder = uigetdir;
 disp('Selected!')
@@ -26,28 +25,32 @@ sampling_rate = VideoReader(d(1).name).FrameRate;
 blocks = 1:size(d,1); %each movie within a imaging session date is considered a separate block 
 
 %% Establish eye ROI and corneal reflections
+exp_obj = VideoReader(d(1).name); %first file
+frame_id = 1;%round((exp_obj.NumberOfFrames)/2); %halfway through the video
+[eyeMask,cornMask,additional_cornMask,the_example_image]=processing.maskEyeAndCornRef(d,1); %choose specific frame to look at
 
-[eyeMask,cornMask,additional_cornMask,the_example_image]=processing.maskEyeAndCornRef(d);
 
-
-%% Establish processing parameters 
-
+%% Establish processing parameters
+frame_id = 600;
+the_example_image = read(exp_obj,frame_id);
  [selectedThreshold,selectedBlink,selectedScope,selectedOrient,selectedUnit,...
     selectedConversion,selectedAlign,selectedFace,selectedKmeans,selectedDilCon]...
     =processing.createSettingsGUI(the_example_image,cornMask,eyeMask,additional_cornMask);
 
  %% Establish Face ROI 
- if selectedFace
-     [faceMask] =  processing.drawFaceROI(the_example_image);
-     faceMatrix = [];
- end
+%  if selectedFace
+%      [faceMask] =  processing.drawFaceROI(the_example_image);
+%      faceMatrix = [];
+%  end
 %% Loop through all blocks
 % For each block this will read out each frame, identify pupil ROI, get
 % area meaurment for circle made, remove blinks and other artifacts from
 % trace, save individual files for each block and a structure containing
 % variables pertaining to each block 
-
-for block =blocks
+save('pupil_setup'); %save all he previous variables!
+satisfied = 0; %for testing blink threshold
+for block = 2:length(blocks)
+    tic
     obj=VideoReader(d(block).name); 
     NumberOfFrames = obj.NumberOfFrames;
 
@@ -58,14 +61,16 @@ for block =blocks
     center_row = [];
     center_column = [];
     
+    %load entire movie to help speed things up?
+    the_image_all_frames = read(obj);
 
     %Converts each frame to BW matrix based on threshold
     for cnt = 1:NumberOfFrames  
-        the_image = read(obj,cnt);
+        the_image = the_image_all_frames(:,:,1,cnt);%read(obj,cnt);
         
-        if selectedFace
-            faceMatrix = [faceMatrix the_image(faceMask)]; %nPix in faceROI x nFrames
-        end
+%         if selectedFace
+%             faceMatrix = [faceMatrix the_image(faceMask)]; %nPix in faceROI x nFrames
+%         end
 
 
         %compute the pupil 
@@ -89,14 +94,20 @@ for block =blocks
             center = z;
         end
         
+        %plot every 10 frames so code runs faster!
+        if mod(cnt,10) == 0
         figure(1);clf;
         imshow(the_image)
         viscircles(z',r)
-        pause(.001)
+        pause(0.0001)
+        cnt
+        end
+        %cnt
         
         raw_radii = [raw_radii radius];
         center_row = [center_row center(2,1)];
         center_column = [center_column center(1,1)];
+        clear the_image
     end
     
     % manipulations on the raw trace of current block - chopping to laser
@@ -108,12 +119,16 @@ for block =blocks
     %Camera on 2P investigator:
         %1024 x 1280 pix res --> conversion factor = 0.00469426267
         %512 x 640 pix res --> conversion factor = 0.00949848
+    %Camera on 2P investigator whole face (starting ~March 2023)
+        %1024 x 1280 pix res --> conversion factor = 0.0136
     %Camera on 2P+:
         %1024 x 1280 pix res --> conversion factor = 0.01147684
         %512 x 640 pix res --> conversion factor = 0.02324933
     if strcmp('mm^2', selectedUnit) 
         
         the_radii = the_radii_cut.*selectedConversion; 
+        center_column_cut = center_column_cut.*selectedConversion; 
+        center_row_cut = center_row_cut.*selectedConversion;
     else
         the_radii= the_radii_cut;
     end
@@ -121,9 +136,22 @@ for block =blocks
     the_areas_compare = (the_radii.^2).*pi;
     
     
-    %eliminating blinks
-    [blinks_data_positions,blink_inds,corrected_areas] = processing.noise_blinks_v3(the_areas,sampling_rate,selectedBlink);
-
+    %eliminating blinks/grooming
+    %add code to try different thresholds for the first file
+   if block == 1
+        while satisfied == 0
+            selectedBlink = input('Type selectedBlink value\n');
+            [blinks_data_positions,blink_inds,corrected_areas,groom_inds,corrected_row, corrected_column] = processing.noise_blinks_v4(the_areas,center_column_cut,center_row_cut,sampling_rate,selectedBlink);
+            figure(1); clf;
+            plot(corrected_areas)
+            hold on
+            plot(the_areas_compare)
+            pause;
+            satisfied = input('Are you satisfied with these gain values? 0/1\n');
+        end
+   else
+            [blinks_data_positions,blink_inds,corrected_areas,groom_inds,corrected_row, corrected_column] = processing.noise_blinks_v4(the_areas,center_column_cut,center_row_cut,sampling_rate,selectedBlink);
+   end
 
     figure(1)
     clf
@@ -133,13 +161,14 @@ for block =blocks
     pause;
 
 
-    pupil.center_position.center_column = center_column_cut;
-    pupil.center_position.center_row = center_row_cut;
+    pupil.center_position.center_column = corrected_column;
+    pupil.center_position.center_row = corrected_row;
     pupil.area.corrected_areas=corrected_areas;
     pupil.area.uncorrected_areas = the_areas_compare;
     pupil.radii.uncut_uncorrected_radii =  raw_radii;
     pupil.radii.cut_uncorrected_radii = the_radii;
     pupil.blink = blink_inds;
+    pupil.groom = groom_inds;
     pupil.galvo_on = first_index; 
     pupil.galvo_off = last_index;
 
@@ -147,10 +176,9 @@ for block =blocks
         save(strcat('file_000',num2str(block),'.mat'),'pupil');
     else
         save(strcat('file_00',num2str(block),'.mat'),'pupil');
-    end
-    
+    end    
     pupil_struct{block} = pupil;    
-
+    toc
 end
 % 
 % motionEnergy = abs(diff(faceMatrix,1,2));
@@ -187,14 +215,13 @@ else
         aligned_y_position,aligned_x_position,blockTransitions,pup_norm_unsmoothed,...
         pup_norm_10,pup_norm_30,pup_norm_70,pup_norm_100]=alignment.make_pupil_aligned_rough(pupil_struct,tseriesBaseFolder);
 end
-%cd(saveBaseFolder)
-mkdir([saveBaseFolder mouse '\' num2str(date)]);
-save(strcat(saveBaseFolder,mouse,'\',num2str(date),'\',num2str(date),'_proc.mat'),...
+cd(saveBaseFolder)
+save(strcat(saveBaseFolder,'\pupil_proc.mat'),...
     'aligned_pupil_unsmoothed','aligned_pupil_smoothed10','aligned_pupil_smoothed30',...
     'aligned_pupil_smoothed70','aligned_pupil_smoothed100','pup_norm_30','pup_norm_10',...
     'pup_norm_unsmoothed','pup_norm_70','pup_norm_100','aligned_x_position',...
     'aligned_y_position','blockTransitions');
-
+figure();subplot(3,1,1); plot(aligned_pupil_unsmoothed);subplot(3,1,2); plot(aligned_x_position);subplot(3,1,3); plot(aligned_y_position);
 %% Optional K-means analysis
 % Use whichever pupil variable you prefer for you data, however it should
 % be normalized (pup_norm_unsmoothed, pup_norm_10, or pup_norm_30)

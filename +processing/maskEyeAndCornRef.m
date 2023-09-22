@@ -1,7 +1,7 @@
-function [eyeMask,cornMask,additional_cornMask,the_example_image]=maskEyeAndCornRef(d)
+function [eyeMask,cornMask,additional_cornMask,the_example_image]=maskEyeAndCornRef(d,frame_id)
 
     exp_obj = VideoReader(d(1).name);
-    the_example_image = read(exp_obj,round((exp_obj.NumberOfFrames)/2));
+    the_example_image = read(exp_obj,frame_id);
     rows = size(the_example_image,1);
     columns = size(the_example_image,2);
     
