@@ -5,6 +5,7 @@
 %   generating artifact corrected frame by frame measurements of pupil area 
 
 %% Setup 
+addpath(genpath("C:\Code\Pupil-processing\"));
 % User inputs information about the current dataset
 disp('Select the folder where unprocessed pupil movies are saved...');
 rawDataFolder = uigetdir;
@@ -29,9 +30,8 @@ exp_obj = VideoReader(d(1).name); %first file
 frame_id = 1;%round((exp_obj.NumberOfFrames)/2); %halfway through the video
 [eyeMask,cornMask,additional_cornMask,the_example_image]=processing.maskEyeAndCornRef(d,1); %choose specific frame to look at
 
-
 %% Establish processing parameters
-frame_id = 600;
+frame_id = 500;
 the_example_image = read(exp_obj,frame_id);
  [selectedThreshold,selectedBlink,selectedScope,selectedOrient,selectedUnit,...
     selectedConversion,selectedAlign,selectedFace,selectedKmeans,selectedDilCon]...
@@ -49,7 +49,8 @@ the_example_image = read(exp_obj,frame_id);
 % variables pertaining to each block 
 save('pupil_setup'); %save all he previous variables!
 satisfied = 0; %for testing blink threshold
-for block = 2:length(blocks)
+for block = 1:length(blocks)
+    block
     tic
     obj=VideoReader(d(block).name); 
     NumberOfFrames = obj.NumberOfFrames;
@@ -138,7 +139,7 @@ for block = 2:length(blocks)
     
     %eliminating blinks/grooming
     %add code to try different thresholds for the first file
-   if block == 1
+   if block > 0
         while satisfied == 0
             selectedBlink = input('Type selectedBlink value\n');
             [blinks_data_positions,blink_inds,corrected_areas,groom_inds,corrected_row, corrected_column] = processing.noise_blinks_v4(the_areas,center_column_cut,center_row_cut,sampling_rate,selectedBlink);
@@ -148,10 +149,11 @@ for block = 2:length(blocks)
             plot(the_areas_compare)
             pause;
             satisfied = input('Are you satisfied with these gain values? 0/1\n');
+%         end
+%    else
+%             [blinks_data_positions,blink_inds,corrected_areas,groom_inds,corrected_row, corrected_column] = processing.noise_blinks_v4(the_areas,center_column_cut,center_row_cut,sampling_rate,selectedBlink);
         end
-   else
-            [blinks_data_positions,blink_inds,corrected_areas,groom_inds,corrected_row, corrected_column] = processing.noise_blinks_v4(the_areas,center_column_cut,center_row_cut,sampling_rate,selectedBlink);
-   end
+    end
 
     figure(1)
     clf
@@ -171,7 +173,10 @@ for block = 2:length(blocks)
     pupil.groom = groom_inds;
     pupil.galvo_on = first_index; 
     pupil.galvo_off = last_index;
+    pupil.block = block;
+    pupil.selectedBlink = selectedBlink;
 
+    block
     if block<10
         save(strcat('file_000',num2str(block),'.mat'),'pupil');
     else

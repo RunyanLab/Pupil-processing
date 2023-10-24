@@ -174,7 +174,9 @@ end
 
 if ~isempty(groom_inds) && groom_inds(1) == 1 %making sure there is a value for first one even with blink
     groom_inds(1) = [];
-    groom_locs1(1) = [];
+    if ~isempty(groom_locs1)
+        groom_locs1(1) = [];
+    end
 end
 %initiate variables
 corrected_areas2 = [];corrected_column =[];corrected_row =[];
