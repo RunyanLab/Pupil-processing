@@ -48,7 +48,7 @@ the_example_image = read(exp_obj,frame_id);
 % trace, save individual files for each block and a structure containing
 % variables pertaining to each block 
 save('pupil_setup'); %save all he previous variables!
-satisfied = 0; %for testing blink threshold
+
 for block = 1:length(blocks)
     block
     tic
@@ -61,6 +61,7 @@ for block = 1:length(blocks)
     raw_radii = [];
     center_row = [];
     center_column = [];
+    satisfied = 0; %for testing blink threshold
     
     %load entire movie to help speed things up?
     the_image_all_frames = read(obj);
@@ -155,12 +156,13 @@ for block = 1:length(blocks)
         end
     end
 
-    figure(1)
-    clf
-    plot(corrected_areas)
-    hold on
-    plot(the_areas_compare)
-    pause;
+%     figure(2)
+%     clf
+%     hold on
+%     plot(corrected_areas)
+%     plot(the_areas_compare)
+%     hold off
+%     pause;
 
 
     pupil.center_position.center_column = corrected_column;
