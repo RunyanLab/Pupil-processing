@@ -25,13 +25,14 @@ sampling_rate = VideoReader(d(1).name).FrameRate;
     
 blocks = 1:size(d,1); %each movie within a imaging session date is considered a separate block 
 
-%% Establish eye ROI and corneal reflections
-exp_obj = VideoReader(d(1).name); %first file
-frame_id = 1;%round((exp_obj.NumberOfFrames)/2); %halfway through the video
-[eyeMask,cornMask,additional_cornMask,the_example_image]=processing.maskEyeAndCornRef(d,1); %choose specific frame to look at
+%% Establish eye ROI and corneal reflections 
+file_id = 8;
+exp_obj = VideoReader(d(file_id).name); %first file
+frame_id = 55;%round((exp_obj.NumberOfFrames)/2); %halfway through the video
+[eyeMask,cornMask,additional_cornMask,the_example_image]=processing.maskEyeAndCornRef(d,file_id,frame_id); %choose specific frame to look at
 
 %% Establish processing parameters
-frame_id = 500;
+frame_id = 181;
 the_example_image = read(exp_obj,frame_id);
  [selectedThreshold,selectedBlink,selectedScope,selectedOrient,selectedUnit,...
     selectedConversion,selectedAlign,selectedFace,selectedKmeans,selectedDilCon]...
@@ -47,9 +48,9 @@ the_example_image = read(exp_obj,frame_id);
 % area meaurment for circle made, remove blinks and other artifacts from
 % trace, save individual files for each block and a structure containing
 % variables pertaining to each block 
-save('pupil_setup'); %save all he previous variables!
+% save('pupil_setup'); %save all he previous variables!
 
-for block = 1:length(blocks)
+for block = 8:length(blocks)
     block
     tic
     obj=VideoReader(d(block).name); 
@@ -185,6 +186,7 @@ for block = 1:length(blocks)
         save(strcat('file_00',num2str(block),'.mat'),'pupil');
     end    
     pupil_struct{block} = pupil;    
+    clear pupil
     toc
 end
 % 
